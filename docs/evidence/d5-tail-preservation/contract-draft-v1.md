@@ -26,170 +26,75 @@ Calibration: CURRENT-CC Claude Code 2.1.258, exact-version network-disabled fake
 2. **Shared wire definitions.** schema_version 1 fixes fields, variants, order, emptiness and unknowns. Option is none or some, never zero. IDs and keys are distinct; numbers are checked nonnegative integers. Digest follows 2a. BootId is not validity. JSON bytes are base64. The request and response envelope discriminator is op; nested payload unions retain kind.
 
 ```text
-MaterialFingerprint = { digest: Digest, normalization_version: integer, excluded_additions: ordered list<ProvenanceTag>
-  }
-AttemptKey = { predecessor_key: SessionKey, agent: AgentId, F: MaterialFingerprint, attempt_id: AttemptId, incarnation:
-  Incarnation }
+MaterialFingerprint = { digest: Digest, normalization_version: integer, excluded_additions: ordered list<ProvenanceTag> }
+AttemptKey = { predecessor_key: SessionKey, agent: AgentId, F: MaterialFingerprint, attempt_id: AttemptId, incarnation: Incarnation }
 AdmissionTicket = { resolve_generation: ResolveGeneration, P: SessionKey, agent: AgentId, incarnation: Incarnation }
-IngressEvidence = { boot_id: BootId, watermark: IngressSequence, sequence_seen: IngressSequence, ownership_id: opaque
-  identity }
-LineageEdge = { edge_id: EdgeId, predecessor_key: SessionKey, successor_key: SessionKey, agent: AgentId, F:
-  MaterialFingerprint, lineage_id: LineageId, continuation_identity: RecognitionIdentity,
-  native_continuation_identity: BlockIdentity }
+IngressEvidence = { boot_id: BootId, watermark: IngressSequence, sequence_seen: IngressSequence, ownership_id: opaque identity }
+LineageEdge = { edge_id: EdgeId, predecessor_key: SessionKey, successor_key: SessionKey, agent: AgentId, F: MaterialFingerprint, lineage_id: LineageId, continuation_identity: RecognitionIdentity, native_continuation_identity: BlockIdentity }
 RecognitionIdentity = { receipt_id: ReceiptId, recognition_token: RecognitionToken }
-RecognitionObservation = { scanned_identity: BlockIdentity, scanned_bytes_sha256: Digest, scanned_role: Role,
-  scanned_kind: BlockKind, native_user_index: integer, scan_source: direct_scalar | text_block | tool_result | other {
-  source: text }, observed_markers: ordered list<RecognitionIdentity>, may_have_replied: boolean, ack: Option<opaque
-  durable identity> }
+RecognitionObservation = { scanned_identity: BlockIdentity, scanned_bytes_sha256: Digest, scanned_role: Role, scanned_kind: BlockKind, native_user_index: integer, scan_source: direct_scalar | text_block | tool_result | other { source: text }, observed_markers: ordered list<RecognitionIdentity>, may_have_replied: boolean, ack: Option<opaque durable identity> }
 ReceiptId = UUID36
 RecognitionToken = lowercase_base32_20
 NativeMessage = { position: MessagePosition, ordinal: Ordinal, mid: Mid, role: Role, blocks: ordered list<NativeBlock> }
-NativeBlock = { index: BlockIndex, kind: BlockKind, bytes: bytes, provenance: ProvenanceTag, tool_links: ordered
-  list<ToolArc> }
-SourceSegment = { normalization_version: integer, messages: ordered list<NativeMessage>, excluded_additions: ordered
-  list<ProvenanceTag> }
+NativeBlock = { index: BlockIndex, kind: BlockKind, bytes: bytes, provenance: ProvenanceTag, tool_links: ordered list<ToolArc> } bytes (normalization 1) = compact key-sorted JSON of the provider block after type, id and tool_use_id are lifted into kind and tool_links; scalar text is {"text": ...}; UTF-8, no whitespace or trailing newline.
+SourceSegment = { normalization_version: integer, messages: ordered list<NativeMessage>, excluded_additions: ordered list<ProvenanceTag> }
 Role = user | assistant | system | tool | other { wire_role: text }
-BlockKind = text | reasoning | redacted_reasoning | tool_use | tool_result | image | document | other {
-  wire_kind: text }
-ProvenanceTag = native | recognized_compaction { addition_kind: text } | inherited { receipt_id: ReceiptId,
-  origin_identity: BlockIdentity }
+BlockKind = text | reasoning | redacted_reasoning | tool_use | tool_result | image | document | other { wire_kind: text }
+ProvenanceTag = native | recognized_compaction { addition_kind: text } | inherited { receipt_id: ReceiptId, origin_identity: BlockIdentity }
 ToolArc = { tool_use_id: text, use_identity: Option<BlockIdentity>, result_identity: Option<BlockIdentity> }
 NormalizedMessage = { position: MessagePosition, ordinal: Ordinal, role: Role, blocks: ordered list<NormalizedBlock> }
 NormalizedEndpoint = { position: MessagePosition, ordinal: Ordinal, index: BlockIndex }
-NormalizedToolArc = { tool_use_id: text, use_source: Option<NormalizedEndpoint>, result_source:
-  Option<NormalizedEndpoint> }
-NormalizedBlock = { index: BlockIndex, kind: BlockKind, bytes: bytes, provenance: ProvenanceTag, tool_links: ordered
-  list<NormalizedToolArc> }
+NormalizedToolArc = { tool_use_id: text, use_source: Option<NormalizedEndpoint>, result_source: Option<NormalizedEndpoint> }
+NormalizedBlock = { index: BlockIndex, kind: BlockKind, bytes: bytes, provenance: ProvenanceTag, tool_links: ordered list<NormalizedToolArc> }
 AppliedStateSnapshot = { schema_version: 1, canonical_payload: bytes }
-NormalProjectionIdentities = { model: ModelId, profile: ProfileId, tool_surface: Digest, guidance_surface: Digest,
-  system_surface: Digest }
+NormalProjectionIdentities = { model: ModelId, profile: ProfileId, tool_surface: Digest, guidance_surface: Digest, system_surface: Digest }
 PFence = none | SEALED { receipt_id: ReceiptId } | REDEEMED { successor_key: SessionKey }
 FenceSnapshot = { p_fence: PFence, fence_generation: FenceGeneration, resolve_generation: ResolveGeneration }
 Refusal = { reason: RefusalReason, receipt_id: Option<ReceiptId>, details: RefusalDetails }
-AttemptOutcome = SEALED { receipt: ReceiptV1 } | REFUSED { refusal: Refusal, negative: NegativeProof } | REDEEMED {
-  receipt_id: ReceiptId, successor_key: SessionKey } | RELEASED { receipt_id: ReceiptId }
+AttemptOutcome = SEALED { receipt: ReceiptV1 } | REFUSED { refusal: Refusal, negative: NegativeProof } | REDEEMED { receipt_id: ReceiptId, successor_key: SessionKey } | RELEASED { receipt_id: ReceiptId }
 PrepareResult = { attempt_outcome: AttemptOutcome, p_fence: PFence, fence_generation: FenceGeneration }
-ResolveResult = RESOLVED { attempt_outcome: Option<AttemptOutcome>, p_fence: PFence, fence_generation:
-  FenceGeneration, resolve_generation: ResolveGeneration } | REFUSED { refusal: Refusal, p_fence: PFence,
-  fence_generation: FenceGeneration, resolve_generation: ResolveGeneration }
-RedeemResult = REDEEMED { receipt_id: ReceiptId, successor_key: SessionKey, existing: boolean, fence_generation:
-  FenceGeneration } | REFUSED { refusal: Refusal } | lineage_corrupt { receipt_id: ReceiptId }
-ReleaseResult = RELEASED { receipt_id: ReceiptId, already_released: boolean, fence_generation: FenceGeneration } |
-  REFUSED { refusal: Refusal }
+ResolveResult = RESOLVED { attempt_outcome: Option<AttemptOutcome>, p_fence: PFence, fence_generation: FenceGeneration, resolve_generation: ResolveGeneration } | REFUSED { refusal: Refusal, p_fence: PFence, fence_generation: FenceGeneration, resolve_generation: ResolveGeneration }
+RedeemResult = REDEEMED { receipt_id: ReceiptId, successor_key: SessionKey, existing: boolean, fence_generation: FenceGeneration } | REFUSED { refusal: Refusal } | lineage_corrupt { receipt_id: ReceiptId }
+ReleaseResult = RELEASED { receipt_id: ReceiptId, already_released: boolean, fence_generation: FenceGeneration } | REFUSED { refusal: Refusal }
 CancelResult = RECORDED { receipt_id: ReceiptId, receipt_state: ReceiptState } | REFUSED { refusal: Refusal }
 ReceiptState = SEALED | REFUSED | REDEEMED | RELEASED
-NegativeProof = tombstone_row { attempt_id: AttemptId, incarnation: Incarnation } | generation_fence { incarnation:
-  Incarnation, invalidated_ticket_generation: ResolveGeneration, fenced_by: ResolveGeneration }
-GatewayAttempt = { attempt_id: AttemptId, P: SessionKey, agent: AgentId, lineage_id: LineageId, incarnation:
-  Incarnation, F: MaterialFingerprint, admission_ticket: Option<AdmissionTicket>, ingress: IngressEvidence, started_at:
-  Timestamp, receipt_id: Option<ReceiptId>, aliases: set<AttemptId>, outcome: UNKNOWN | AttemptOutcome,
-  MAY_HAVE_REPLIED: boolean, send_state: OPEN | RELEASE_INTENT | NEVER_SEND, retries: durable set<RetryIdentity>,
-  allocation_ref: positional MID allocation identity }
-SuccessorFrontiers = { folded_frontier: Option<Ordinal>, first_inherited_ordinal: Option<Ordinal>, source_frontier:
-  Option<Ordinal>, lineage_anchor: Ordinal, rebase_base: Ordinal, coverage_identity: Option<BlockIdentity>,
-  native_continuation_identity: BlockIdentity }
+NegativeProof = tombstone_row { attempt_id: AttemptId, incarnation: Incarnation } | generation_fence { incarnation: Incarnation, invalidated_ticket_generation: ResolveGeneration, fenced_by: ResolveGeneration }
+GatewayAttempt = { attempt_id: AttemptId, P: SessionKey, agent: AgentId, lineage_id: LineageId, incarnation: Incarnation, F: MaterialFingerprint, admission_ticket: Option<AdmissionTicket>, ingress: IngressEvidence, started_at: Timestamp, receipt_id: Option<ReceiptId>, aliases: set<AttemptId>, outcome: UNKNOWN | AttemptOutcome, MAY_HAVE_REPLIED: boolean, send_state: OPEN | RELEASE_INTENT | NEVER_SEND, retries: durable set<RetryIdentity>, allocation_ref: positional MID allocation identity }
+SuccessorFrontiers = { folded_frontier: Option<Ordinal>, first_inherited_ordinal: Option<Ordinal>, source_frontier: Option<Ordinal>, lineage_anchor: Ordinal, rebase_base: Ordinal, coverage_identity: Option<BlockIdentity>, native_continuation_identity: BlockIdentity }
 BlockIdentity = { mid: Mid, index: BlockIndex, ordinal: Ordinal }
-ReceiptV1 = { schema_version: 1, receipt_id: ReceiptId, attempt_id: AttemptId, predecessor_key: SessionKey,
-  successor_key: Option<SessionKey>, lineage_id: LineageId, owner_key: SessionKey, agent: AgentId, incarnation:
-  Incarnation, aliases: ordered set<{attempt_id: AttemptId, ticket: AdmissionTicket}>, F: MaterialFingerprint,
-  recognition_token: RecognitionToken, admission_ticket: AdmissionTicket, sealed_state: Option<{ P_state_version: StateVersion, projection_key: opaque identity, applied_state_hash: Digest, epoch_before: integer, epoch_after: integer, fence_generation: FenceGeneration,
-  resolve_generation: ResolveGeneration }>, ingress: IngressEvidence, frontiers: Option<SuccessorFrontiers>,
-  representation: carry | refused, budget: BudgetRecord, manifest: Option<ManifestV1>, refs: Option<{ archive_id:
-  ArchiveId, manifest_digest: Digest, applied_state_hash: Digest }>, pending_drops: ordered list<CommandTarget>,
-  post_seal_drops: ordered list<CommandTarget>, post_redeem: Option<PostRedeemRecord>, state: ReceiptState, refusal:
-  Option<Refusal>, negative: Option<NegativeProof>, edge: Option<LineageEdge>, sealed_at: Option<Timestamp>,
-  released_at: Option<Timestamp>, cancelled_before_delivery: Option<CancelAssertion> }
-PostRedeemRecord = { schema_version: 1, overflow_refusals: integer, last_diagnosis: Option<CapacityDiagnosis>,
-  preserved_but_blocked: boolean, relief: SuccessorReliefState, overflow_probe: {attempts: integer, next_probe_at:
-  Timestamp}, last_overflow: Option<{estimated: TokenCount, actual: TokenCount, actual_source: mc_estimate | provider,
-  usable_hard: TokenCount, at: Timestamp}> }
-CapacityDiagnosis = { system_tools_tokens: TokenCount, carry_tokens: TokenCount, m0_tokens: TokenCount, m1_tokens:
-  TokenCount, usable_hard: TokenCount, reason: system_tools_exceed_hard | no_outstanding_carry | pending_relief |
-  below_min_chunk | producer_unavailable | still_over_capacity }
-SuccessorOverflow = successor_overflow { estimated: TokenCount, actual: TokenCount, actual_source: mc_estimate |
-  provider, usable_hard: TokenCount }
-CommandTarget = { command_id: CommandId, target: BlockIdentity, state: queued | pending | partial | covered | retired,
-  provenance: command provenance, protection: durable protection state }
-ArchiveV1 = { schema_version: 1, archive_id: ArchiveId, encoding_version: integer, manifest: ManifestV1, V: ordered
-  projected message bytes, A: AppliedStateSnapshot }
-ManifestV1 = { schema_version: 1, normalization_version: integer, encoding_version: integer, messages: ordered list<{
-  ordinal: Ordinal, native_mid: Mid, native_position: Option<MessagePosition>, role: Role, blocks: ordered list<{ index:
-  BlockIndex, kind: BlockKind, predecessor_identity: BlockIdentity, provenance: native { attempt_id: AttemptId,
-  predecessor_key: SessionKey, message_position: MessagePosition } | inherited_from { receipt_id: ReceiptId,
-  origin_identity: BlockIdentity }, source: { len: ByteCount, sha256: Digest }, served: { len: ByteCount, sha256: Digest
-  }, applied_unit: Option<UnitKey>, tool_links: ordered list<ToolArc> }> }> }
-CarryProjectionV1 = { schema_version: 1, receipt_id: ReceiptId, archive_id: ArchiveId, manifest_digest: Digest,
-  row_version: RowVersion, coverage_identity: Option<BlockIdentity>, native_continuation_identity: BlockIdentity, members:
-  ordered list<{ identity: BlockIdentity, validation: frozen { served_sha256: Digest } | projection_digest { sha256:
-  Digest, unit: UnitKey, row_version: RowVersion } }>, projection_digest: { sha256: Digest, row_version: RowVersion,
-  units: ordered list<UnitKey> }, coverage_proof: receipt-backed manifest or real-compartment proof }
-TransformResponse = existing response fields plus { lineage_descent_disposition: Option<text>, d5_carry:
-  Option<CarryProjectionV1> }
-GeometryV1 = { usable_soft: TokenCount, usable_hard: TokenCount, absolute_wall: Option<TokenCount>, derivation:
-  descriptive text, reserve_accounting: once_carved | none_declared }
-EnvelopeRecordV1 = { schema_version: 1, envelope_id: EnvelopeId, request_id: RequestId, request_sha256: Digest,
-  captured_at: Timestamp, model: ModelId, system_bytes: KnownBytes, tools_bytes: KnownBytes, geometry: GeometryV1,
-  profile: ProfileId, guidance_surface: Digest, tool_surface: Digest, system_surface: Digest, session_id: SessionId,
-  agent: AgentId, lineage_id: LineageId, predecessor_key: SessionKey, incarnation: Incarnation, gateway_boot_id: BootId,
-  ingress_sequence: IngressSequence, reserve_accounting: once_carved | none_declared }
+ReceiptV1 = { schema_version: 1, receipt_id: ReceiptId, attempt_id: AttemptId, predecessor_key: SessionKey, successor_key: Option<SessionKey>, lineage_id: LineageId, owner_key: SessionKey, agent: AgentId, incarnation: Incarnation, aliases: ordered set<{attempt_id: AttemptId, ticket: AdmissionTicket}>, F: MaterialFingerprint, recognition_token: RecognitionToken, admission_ticket: AdmissionTicket, sealed_state: Option<{ P_state_version: StateVersion, projection_key: opaque identity, applied_state_hash: Digest, epoch_before: integer, epoch_after: integer, fence_generation: FenceGeneration, resolve_generation: ResolveGeneration }>, ingress: IngressEvidence, frontiers: Option<SuccessorFrontiers>, representation: carry | refused, budget: BudgetRecord, manifest: Option<ManifestV1>, refs: Option<{ archive_id: ArchiveId, manifest_digest: Digest, applied_state_hash: Digest }>, pending_drops: ordered list<CommandTarget>, post_seal_drops: ordered list<CommandTarget>, post_redeem: Option<PostRedeemRecord>, state: ReceiptState, refusal: Option<Refusal>, negative: Option<NegativeProof>, edge: Option<LineageEdge>, sealed_at: Option<Timestamp>, released_at: Option<Timestamp>, cancelled_before_delivery: Option<CancelAssertion> }
+PostRedeemRecord = { schema_version: 1, overflow_refusals: integer, last_diagnosis: Option<CapacityDiagnosis>, preserved_but_blocked: boolean, relief: SuccessorReliefState, overflow_probe: {attempts: integer, next_probe_at: Timestamp}, last_overflow: Option<{estimated: TokenCount, actual: TokenCount, actual_source: mc_estimate | provider, usable_hard: TokenCount, at: Timestamp}> }
+CapacityDiagnosis = { system_tools_tokens: TokenCount, carry_tokens: TokenCount, m0_tokens: TokenCount, m1_tokens: TokenCount, usable_hard: TokenCount, reason: system_tools_exceed_hard | no_outstanding_carry | pending_relief | below_min_chunk | producer_unavailable | still_over_capacity }
+SuccessorOverflow = successor_overflow { estimated: TokenCount, actual: TokenCount, actual_source: mc_estimate | provider, usable_hard: TokenCount }
+CommandTarget = { command_id: CommandId, target: BlockIdentity, state: queued | pending | partial | covered | retired, provenance: command provenance, protection: durable protection state }
+ArchiveV1 = { schema_version: 1, archive_id: ArchiveId, encoding_version: integer, manifest: ManifestV1, V: ordered projected message bytes, A: AppliedStateSnapshot }
+ManifestV1 = { schema_version: 1, normalization_version: integer, encoding_version: integer, messages: ordered list<{ ordinal: Ordinal, native_mid: Mid, native_position: Option<MessagePosition>, role: Role, blocks: ordered list<{ index: BlockIndex, kind: BlockKind, predecessor_identity: BlockIdentity, provenance: native { attempt_id: AttemptId, predecessor_key: SessionKey, message_position: MessagePosition } | inherited_from { receipt_id: ReceiptId, origin_identity: BlockIdentity }, source: { len: ByteCount, sha256: Digest }, served: { len: ByteCount, sha256: Digest }, applied_unit: Option<UnitKey>, tool_links: ordered list<ToolArc> }> }> }
+CarryProjectionV1 = { schema_version: 1, receipt_id: ReceiptId, archive_id: ArchiveId, manifest_digest: Digest, row_version: RowVersion, coverage_identity: Option<BlockIdentity>, native_continuation_identity: BlockIdentity, members: ordered list<{ identity: BlockIdentity, validation: frozen { served_sha256: Digest } | projection_digest { sha256: Digest, unit: UnitKey, row_version: RowVersion } }>, projection_digest: { sha256: Digest, row_version: RowVersion, units: ordered list<UnitKey> }, coverage_proof: receipt-backed manifest or real-compartment proof }
+TransformResponse = existing response fields plus { lineage_descent_disposition: Option<text>, d5_carry: Option<CarryProjectionV1> }
+GeometryV1 = { usable_soft: TokenCount, usable_hard: TokenCount, absolute_wall: Option<TokenCount>, derivation: descriptive text, reserve_accounting: once_carved | none_declared }
+EnvelopeRecordV1 = { schema_version: 1, envelope_id: EnvelopeId, request_id: RequestId, request_sha256: Digest, captured_at: Timestamp, model: ModelId, system_bytes: KnownBytes, tools_bytes: KnownBytes, geometry: GeometryV1, profile: ProfileId, guidance_surface: Digest, tool_surface: Digest, system_surface: Digest, session_id: SessionId, agent: AgentId, lineage_id: LineageId, predecessor_key: SessionKey, incarnation: Incarnation, gateway_boot_id: BootId, ingress_sequence: IngressSequence, reserve_accounting: once_carved | none_declared }
 KnownBytes = present { bytes: bytes, sha256: Digest } | unknown { reason: text }
-EnvelopeSlot = available { record: EnvelopeRecordV1 } | absent { reason: text } | newer_unusable { boot_id: BootId,
-  sequence: IngressSequence, reason: text }
-PrepareBudgetEvidence = { schema_version: 1, geometry: GeometryV1, envelope: EnvelopeSlot, intended_normal_projection:
-  NormalProjectionIdentities }
+EnvelopeSlot = available { record: EnvelopeRecordV1 } | absent { reason: text } | newer_unusable { boot_id: BootId, sequence: IngressSequence, reason: text }
+PrepareBudgetEvidence = { schema_version: 1, geometry: GeometryV1, envelope: EnvelopeSlot, intended_normal_projection: NormalProjectionIdentities }
 ReserveRecord = { model: ModelId, tokens: TokenCount, source: window-geometry | config, units: tokens }
-PolicyReserveRecord = { tokens_estimate: TokenCount, reminder_tokens: TokenCount, recognition_suffix_tokens:
-  TokenCount, recognition_suffix_bytes: ByteCount, recognition_suffix_sha256: Digest, estimator: {name: mc-tokenizer,
-  version: text}, model: ModelId, profile: ProfileId, fixture_manifest_sha256: Digest, margin: ratio,
-  supported_profiles: list<ProfileId>, dynamic_field_limits: list<{field: text, limit: ByteCount}>, source: fixtures }
-BudgetRecord = { schema_version: 1, geometry_wire: GeometryV1, reserve_accounting: once_carved | none_declared,
-  output_reserve_mc: Known<ReserveRecord>, policy_reserve: Known<PolicyReserveRecord>, estimator: Known<{ identity:
-  text, version: text, model: ModelId, units: tokens }>, envelope_id: Option<EnvelopeId>, request_sha256:
-  Option<Digest>, budget_evidence: fresh | aged { n: integer } | mismatch { field: text } | unknown { reason: text },
-  estimates: { system: Known<TokenCount>, tools: Known<TokenCount>, m0: Known<TokenCount>, m1: Known<TokenCount>, carry:
-  Known<TokenCount>, policy: Known<TokenCount>, total_input_X: Known<TokenCount> }, soft_declared: Known<TokenCount>,
-  hard_declared: Known<TokenCount>, soft_bounded: Known<TokenCount>, fit_soft: Known<TokenCount>, hard_required:
-  Known<TokenCount>, clamp_applied: Known<boolean>, soft_ok: Known<boolean>, hard_ok: Known<boolean>, encoded_bytes:
-  Known<{ archive: ByteCount, carry_frame: ByteCount, gateway_limit: ByteCount, mc_frame_page_limit: ByteCount,
-  configured_archive_limit: ByteCount }>, failed_caps: ordered list<typed cap result>, unknown_inputs: ordered
-  list<field and reason> }
+PolicyReserveRecord = { tokens_estimate: TokenCount, reminder_tokens: TokenCount, recognition_suffix_tokens: TokenCount, recognition_suffix_bytes: ByteCount, recognition_suffix_sha256: Digest, estimator: {name: mc-tokenizer, version: text}, model: ModelId, profile: ProfileId, fixture_manifest_sha256: Digest, margin: ratio, supported_profiles: list<ProfileId>, dynamic_field_limits: list<{field: text, limit: ByteCount}>, source: fixtures }
+BudgetRecord = { schema_version: 1, geometry_wire: GeometryV1, reserve_accounting: once_carved | none_declared, output_reserve_mc: Known<ReserveRecord>, policy_reserve: Known<PolicyReserveRecord>, estimator: Known<{ identity: text, version: text, model: ModelId, units: tokens }>, envelope_id: Option<EnvelopeId>, request_sha256: Option<Digest>, budget_evidence: fresh | aged { n: integer } | mismatch { field: text } | unknown { reason: text }, estimates: { system: Known<TokenCount>, tools: Known<TokenCount>, m0: Known<TokenCount>, m1: Known<TokenCount>, carry: Known<TokenCount>, policy: Known<TokenCount>, total_input_X: Known<TokenCount> }, soft_declared: Known<TokenCount>, hard_declared: Known<TokenCount>, soft_bounded: Known<TokenCount>, fit_soft: Known<TokenCount>, hard_required: Known<TokenCount>, clamp_applied: Known<boolean>, soft_ok: Known<boolean>, hard_ok: Known<boolean>, encoded_bytes: Known<{ archive: ByteCount, carry_frame: ByteCount, gateway_limit: ByteCount, mc_frame_page_limit: ByteCount, configured_archive_limit: ByteCount }>, failed_caps: ordered list<typed cap result>, unknown_inputs: ordered list<field and reason> }
 Known<T> = known { value: T } | unknown { reason: text }
-SuccessorReliefState = none | armed { range: {first: Ordinal,
-  last: Ordinal}, refusal_seq: integer, armed_at: Timestamp } | assembled { firing_id: FiringId, range: {first: Ordinal, last: Ordinal} }
-  | published { compartment_seq: Sequence, published_at: Timestamp } | unavailable { reason: no_outstanding_carry |
-  below_min_chunk | system_tools_exceed_hard | producer_unavailable }
-HealthD5 = { sealed_unredeemed: ordered list<{receipt_id: ReceiptId, age_seconds: integer}>, lineage_corrupt:
-  ordered list<ReceiptId>, refused_by_generation_responses: integer, refused_by_generation_attempts: integer,
-  refused_by_tombstone: integer, blocked: {preserved_but_blocked: boolean, overflow_refusals: integer},
-  successor_relief: ordered list<{ successor_key: SessionKey, relief: SuccessorReliefState, overflow_refusals:
-  integer }>, uncovered_descent: ordered list<{lineage_id: LineageId, first: Ordinal, last: Ordinal}>,
-  unrecognized_successors: integer, last_unrecognized_token_prefix: Option<text>, state: ok | preserved_but_blocked |
-  lineage_corrupt }
-NeverSendProof = { receipt_id: ReceiptId, incarnation: Incarnation, aliases: ordered set<AttemptId>, retries: ordered
-  set<RetryIdentity>, revocation_id: opaque durable identity }
+SuccessorReliefState = none | armed { range: {first: Ordinal, last: Ordinal}, refusal_seq: integer, armed_at: Timestamp } | assembled { firing_id: FiringId, range: {first: Ordinal, last: Ordinal} } | published { compartment_seq: Sequence, published_at: Timestamp } | unavailable { reason: no_outstanding_carry | below_min_chunk | system_tools_exceed_hard | producer_unavailable }
+HealthD5 = { sealed_unredeemed: ordered list<{receipt_id: ReceiptId, age_seconds: integer}>, lineage_corrupt: ordered list<ReceiptId>, refused_by_generation_responses: integer, refused_by_generation_attempts: integer, refused_by_tombstone: integer, blocked: {preserved_but_blocked: boolean, overflow_refusals: integer}, successor_relief: ordered list<{ successor_key: SessionKey, relief: SuccessorReliefState, overflow_refusals: integer }>, uncovered_descent: ordered list<{lineage_id: LineageId, first: Ordinal, last: Ordinal}>, unrecognized_successors: integer, last_unrecognized_token_prefix: Option<text>, state: ok | preserved_but_blocked | lineage_corrupt }
+NeverSendProof = { receipt_id: ReceiptId, incarnation: Incarnation, aliases: ordered set<AttemptId>, retries: ordered set<RetryIdentity>, revocation_id: opaque durable identity }
 CancelAssertion = cancelled_before_delivery
 UploadRef = {upload_id: UploadId, digest: Digest, total_bytes: ByteCount}
 PrepareSource = inline {segment: SourceSegment} | ref {upload: UploadRef}
 EnvelopePending = pending {sequence: IngressSequence}
-RefusalReason = invalid_arguments | ticket_invalid | stale_incarnation | budget_unknown | budget_model_mismatch |
-  budget_evidence_mismatch | token_cap | byte_cap | p_already_sealed | seal_material_mismatch | resolved_absent |
-  seal_after_tombstone | seal_after_resolve | attempt_quota | sealed_unredeemed | lineage_corrupt |
-  successor_overflow | already_redeemed | invalid_terminal_state | upload_declaration_conflict | chunk_conflict |
-  upload_digest_mismatch | upload_incomplete | upload_quota | d5_receipt_required | d5_downgrade_refused
-RefusalDetails = none | field {field: text, reason: text} | cap {cap: text, actual: integer, limit: integer,
-  units: text} | winner {receipt_id: ReceiptId} | resolved_absent {attempt_id: AttemptId, incarnation: Incarnation} |
-  upload {upload_id: Option<UploadId>, seq: Option<ChunkSeq>, declared_digest: Option<Digest>, actual_digest:
-  Option<Digest>} | successor_capacity {estimated: TokenCount, actual: TokenCount, actual_source: mc_estimate |
-  provider, usable_hard: TokenCount}
+RefusalReason = invalid_arguments | ticket_invalid | stale_incarnation | budget_unknown | budget_model_mismatch | budget_evidence_mismatch | token_cap | byte_cap | p_already_sealed | seal_material_mismatch | resolved_absent | seal_after_tombstone | seal_after_resolve | attempt_quota | sealed_unredeemed | lineage_corrupt | successor_overflow | already_redeemed | invalid_terminal_state | upload_declaration_conflict | chunk_conflict | upload_digest_mismatch | upload_incomplete | upload_quota | d5_receipt_required | d5_downgrade_refused
+RefusalDetails = none | field {field: text, reason: text} | cap {cap: text, actual: integer, limit: integer, units: text} | winner {receipt_id: ReceiptId} | resolved_absent {attempt_id: AttemptId, incarnation: Incarnation} | upload {upload_id: Option<UploadId>, seq: Option<ChunkSeq>, declared_digest: Option<Digest>, actual_digest: Option<Digest>} | successor_capacity {estimated: TokenCount, actual: TokenCount, actual_source: mc_estimate | provider, usable_hard: TokenCount}
 TicketResult = ISSUED {ticket: AdmissionTicket} | REFUSED {refusal: Refusal where reason=invalid_arguments}
 BeginResult = BEGUN {upload_id: UploadId} | REFUSED {refusal: Refusal}
 PutResult = STORED {seq: ChunkSeq, chunk_digest: Digest} | REFUSED {refusal: Refusal}
 FinishResult = FINISHED {upload: UploadRef} | REFUSED {refusal: Refusal}
-LineageRequest = tagged union op ticket | prepare | resolve | redeem | release | cancel | begin | put | finish;
-  each variant's fields are exactly its same-named clause 3 arguments, without an extra args wrapper
-LineageResponse = ticket {result: TicketResult} | prepare {result: PrepareResult} | resolve {result: ResolveResult} |
-  redeem {result: RedeemResult} | release {result: ReleaseResult} | cancel {result: CancelResult} | begin {result:
-  BeginResult} | put {result: PutResult} | finish {result: FinishResult}
+LineageRequest = tagged union op ticket | prepare | resolve | redeem | release | cancel | begin | put | finish; each variant's fields are exactly its same-named clause 3 arguments, without an extra args wrapper
+LineageResponse = ticket {result: TicketResult} | prepare {result: PrepareResult} | resolve {result: ResolveResult} | redeem {result: RedeemResult} | release {result: ReleaseResult} | cancel {result: CancelResult} | begin {result: BeginResult} | put {result: PutResult} | finish {result: FinishResult}
 ```
 
 2a. **CE1 and digest preimages.** CE1 encoding_version 1 uses fixed unsigned big-endian U32BE and U64BE. Integer-like scalars are checked U64; bool is byte 0 or 1; Digest is 32 raw bytes; Timestamp is length-prefixed canonical UTC RFC3339; IDs, keys, text and bytes are U64BE length plus UTF-8 or raw payload. Lists are U64BE count plus members; option is byte 0 or byte 1 plus value; union is zero-based declaration-order U32BE plus fields; struct is printed field order. Ordered sets sort full encodings, reject duplicates, then encode as lists. Ratio is reduced U64BE numerator and nonzero denominator. Field names, JSON, host, clock and locale are excluded. AppliedStateSnapshot.canonical_payload deterministically exports units, tags, drops and ledger in stable key order or refuses.
@@ -303,7 +208,7 @@ token_fit = soft_ok AND hard_ok
 
 25a. **Receipt-absent descent.** lineage.d5.require_receipt_for_descent ships true for Claude Code D5 after the bounce; false is explicit non-D5 only. Nonempty uncovered tail without matching SEALED returns d5_receipt_required without mutation. False retains legacy descent and writes mc_d5_uncovered_descent{owner_key,lineage_id,first,last,observed_at}; the existing specimen keeps (1,3),(4,6),(11,11), coverage 11 and reports 7–10. Clear only after full redeemed or real-fold proof, or owner deletion. I12 has a receipt. Redeem uses its dedicated lineage_corrupt variant; other ops use the refusal reason.
 
-26. **Single consumer inventory.** mc-store and mc-module paths are under crates/. Re-cite rows at dispatch; each has one slice and owner. The three TS rows across two files are not-this-campaign.
+26. **Single consumer inventory.** mc-store and mc-module paths are under crates/. Re-cite rows at dispatch; each has one slice and owner. The three TS rows are not-this-campaign.
 
 | Consumer and source site | Owner | Observable |
 |---|---|---|
@@ -342,7 +247,7 @@ token_fit = soft_ok AND hard_ok
 
 26a. **Status surface.** session.status always adds sorted d5:HealthD5 for mapped owner_key, incarnation and lineage. Receipt, corruption, refusal and recognition data use current owner_key; descent uses owner_key plus lineage_id. After REDEEMED, all post_redeem data belongs to S; P has no S relief and blocked {preserved_but_blocked:false,overflow_refusals:0}. One snapshot read composes it. No rows means empty lists, zero counters, no prefix, that blocked object and state ok. Other surfaces only relay.
 
-27. **Fixtures, store fence and disjoint slices.** The MC specimen is on master at crates/mc-module/tests/fixtures/d5-specimen: source-segment-v1, scaffold manifest and archive with digests pending, README, fixture-index-v1 (per-member provenance, per-file SHA-256, readiness, gateway per-artifact hashes), a sha-gated generator and test. Slice 0 imports the remaining owner data (d5-canonical-v1.json, I34's 141-message union, both anchor JSON files, policy-reserve-v3 inputs with the three R14 samples) into fixture-index-v1; OpenCode and Pi goldens are re-cited; no directory census or identity-table JSON. Slice 0 fills the specimen digests from independent CE1 preimage vectors, never the codec under test, then freezes them; input digests live in R4a and the index; missing input fails. I1–I62 cover product and gateway work.
+27. **Fixtures, store fence and disjoint slices.** The MC specimen is on master at crates/mc-module/tests/fixtures/d5-specimen: source-segment-v1, scaffold manifest and archive with digests pending, README, fixture-index-v1 (per-member provenance, file SHA-256, readiness, gateway per-artifact hashes), sha-gated generator and test. Slice 0 imports the remaining owner data (d5-canonical-v1.json, I34's 141-message union, both anchor JSON files, policy-reserve-v3 inputs with the three R14 samples) into fixture-index-v1; OpenCode and Pi goldens re-cited; no directory census or identity-table JSON. Slice 0 fills the specimen digests from independent CE1 preimage vectors, never the codec under test, then freezes them; input digests live in R4a and the index; missing input fails. I1–I62 cover product and gateway work.
 
    Migration mc_store_d5_lineage_v1 adds all named D5 tables and mc_reduce_command_ledger partial and covered; #2732 is not banked. D5 state never uses legacy JSON. Every D5 table has owner_key and no session_id, including shared blobs; explicit deletion uses 2b.
 
@@ -350,7 +255,7 @@ token_fit = soft_ok AND hard_ok
 
    Slice 1 owns mc-store schema, CE1, upload, lifecycle, reads, CAS and deletion, then one fence-bearing coordinated ck-mc bounce by the release owner. Slice 2 owns lineage route, wire, budget, status attachment; dispatch re-cites the ManagementSurface file and handle_session_status_value region in mc-module/src/lib.rs. Slice 3 owns carry, d5_carry, digests, identities, absorption, overlap, rebind, nesting; dispatch re-cites apply_once as the second coverage symbol beside coverage_ordinal_from_compartments. Slice 4 owns historian, ctx_expand, markers, parity, specimens. Hop cap 5 stays; regions are disjoint; transform.rs is sequential; release waits for gateway shared-contract asks; slice workers never restart.
 
-28. **Defect and verification.** Preserve 1799–1939 after the failed revert_epoch; memory14536 is not proof. Numeric counts are Rust literals in named seams compared independently with declared input and implementation output; no JSON supplies expectations. Silent guards follow green, staged empty diff, NON-VACUITY BREAK, red named test, restore and empty diff. Record failures; directly assert hard_ok, hard_required and admission. Undefended controls need a same-target red control. Documentation changes no product or spec state.
+28. **Defect and verification.** Preserve 1799–1939 after the failed revert_epoch; memory14536 is not proof. Numeric counts are Rust literals in named seams compared independently with declared input and implementation output; no JSON supplies expectations. Silent guards follow green, staged empty diff, NON-VACUITY BREAK, red named test, restore, empty diff. Record failures; assert hard_ok, hard_required and admission directly. Undefended controls need a same-target red control. Documentation changes no product or spec state.
 
 ### transport
 
