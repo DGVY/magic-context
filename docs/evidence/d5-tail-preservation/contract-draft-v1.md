@@ -23,7 +23,7 @@ Calibration: CURRENT-CC Claude Code 2.1.258, exact-version network-disabled fake
 
 1. **Vocabulary and preservation boundary.** P is predecessor, S successor and T ordered uncovered tail. Source is normalized native blocks minus recognized compaction additions. A is durable reductions, tags, drops and ledger; V=project(source,A) includes never-served blocks. Source authorizes material and A permissions. Gateway clauses are target semantics. Every unfolded block MUST have validated real coverage or durable carry. Empty boundaries cover nothing; P's publisher is not the carrier.
 
-2. **Shared wire definitions.** schema_version 1 fixes fields, variants, order, emptiness and unknowns. Option is none or some, never zero. IDs and keys are distinct; numbers are checked nonnegative integers. Digest follows 2a. BootId is not validity. JSON bytes are base64. The request and response envelope discriminator is op; nested payload unions retain kind.
+2. **Shared wire definitions.** schema_version 1 fixes fields, variants, order, emptiness and unknowns. Option is none or some, never zero. IDs and keys are distinct; numbers are checked nonnegative integers. Digest follows 2a. BootId is not validity. JSON bytes are base64. Envelope discriminator is op; nested payload unions retain kind.
 
 ```text
 MaterialFingerprint = { digest: Digest, normalization_version: integer, excluded_additions: ordered list<ProvenanceTag> }
@@ -36,7 +36,8 @@ RecognitionObservation = { scanned_identity: BlockIdentity, scanned_bytes_sha256
 ReceiptId = UUID36
 RecognitionToken = lowercase_base32_20
 NativeMessage = { position: MessagePosition, ordinal: Ordinal, mid: Mid, role: Role, blocks: ordered list<NativeBlock> }
-NativeBlock = { index: BlockIndex, kind: BlockKind, bytes: bytes, provenance: ProvenanceTag, tool_links: ordered list<ToolArc> } bytes (normalization 1) = compact key-sorted JSON of the provider block after type, id and tool_use_id are lifted into kind and tool_links; scalar text is {"text": ...}; UTF-8, no whitespace or trailing newline.
+NativeBlock = { index: BlockIndex, kind: BlockKind, bytes: bytes, provenance: ProvenanceTag, tool_links: ordered list<ToolArc> }
+bytes (normalization 1): known kinds are canonical JSON of the block after type, id and tool_use_id are lifted into kind and tool_links, per the normative algorithm the specimen vector file pins; scalar text is {"text": ...}; opaque kinds keep raw provider bytes.
 SourceSegment = { normalization_version: integer, messages: ordered list<NativeMessage>, excluded_additions: ordered list<ProvenanceTag> }
 Role = user | assistant | system | tool | other { wire_role: text }
 BlockKind = text | reasoning | redacted_reasoning | tool_use | tool_result | image | document | other { wire_kind: text }
@@ -208,7 +209,7 @@ token_fit = soft_ok AND hard_ok
 
 25a. **Receipt-absent descent.** lineage.d5.require_receipt_for_descent ships true for Claude Code D5 after the bounce; false is explicit non-D5 only. Nonempty uncovered tail without matching SEALED returns d5_receipt_required without mutation. False retains legacy descent and writes mc_d5_uncovered_descent{owner_key,lineage_id,first,last,observed_at}; the existing specimen keeps (1,3),(4,6),(11,11), coverage 11 and reports 7–10. Clear only after full redeemed or real-fold proof, or owner deletion. I12 has a receipt. Redeem uses its dedicated lineage_corrupt variant; other ops use the refusal reason.
 
-26. **Single consumer inventory.** mc-store and mc-module paths are under crates/. Re-cite rows at dispatch; each has one slice and owner. The three TS rows are not-this-campaign.
+26. **Single consumer inventory.** mc-store and mc-module paths are under crates/. Re-cite rows at dispatch; each has one slice and owner. Three TS rows are not-this-campaign.
 
 | Consumer and source site | Owner | Observable |
 |---|---|---|
@@ -255,7 +256,7 @@ token_fit = soft_ok AND hard_ok
 
    Slice 1 owns mc-store schema, CE1, upload, lifecycle, reads, CAS and deletion, then one fence-bearing coordinated ck-mc bounce by the release owner. Slice 2 owns lineage route, wire, budget, status attachment; dispatch re-cites the ManagementSurface file and handle_session_status_value region in mc-module/src/lib.rs. Slice 3 owns carry, d5_carry, digests, identities, absorption, overlap, rebind, nesting; dispatch re-cites apply_once as the second coverage symbol beside coverage_ordinal_from_compartments. Slice 4 owns historian, ctx_expand, markers, parity, specimens. Hop cap 5 stays; regions are disjoint; transform.rs is sequential; release waits for gateway shared-contract asks; slice workers never restart.
 
-28. **Defect and verification.** Preserve 1799–1939 after the failed revert_epoch; memory14536 is not proof. Numeric counts are Rust literals in named seams compared independently with declared input and implementation output; no JSON supplies expectations. Silent guards follow green, staged empty diff, NON-VACUITY BREAK, red named test, restore, empty diff. Record failures; assert hard_ok, hard_required and admission directly. Undefended controls need a same-target red control. Documentation changes no product or spec state.
+28. **Defect and verification.** Preserve 1799–1939 after the failed revert_epoch; memory14536 is not proof. Numeric counts are Rust literals in named seams compared independently with declared input and implementation output; no JSON supplies expectations. Silent guards follow green, staged empty diff, NON-VACUITY BREAK, red named test, restore, empty diff. Record failures; assert hard_ok, hard_required and admission. Undefended controls need a same-target red control. Documentation changes no product or spec state.
 
 ### transport
 
