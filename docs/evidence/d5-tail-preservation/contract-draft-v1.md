@@ -7,6 +7,8 @@ validation_only: true
 ---
 
 ## intent
+Build output (this spec's deliverable): the D5 tail-preservation implementation in the MC Rust module and store — the `mc.lineage` InternalService route on ck-mc with the six lifecycle operations and the begin/put/finish upload operations, the seal transaction and receipt schema in mc-store (a store migration, the fence-bearing slice), the successor carry projection and its per-block digest checks in the transform, the consumer rebinds listed in the constraints, the session.status read-only fields, and the executable invariants I1–I52 as Rust unit/integration tests plus hermetic E2E drills against the recorded specimen. Every clause below is normative for that implementation; the gateway-side semantics (Claude Code gateway) are the shared contract the gateway campaign implements against the same clauses. Slices land as: (1) mc-store schema + seal/receipt transaction, (2) mc.lineage route + authority + upload ops, (3) transform carry projection + consumer rebinds + status fields, (4) E2E drills with the specimen; slice 1 moves the store fence and lands with one coordinated ck-mc bounce.
+
 
 The executed D5 defect proof shows a successor with real history ending at ordinal 1798, an empty continuation boundary at 1940, and no automatic conversation recovery for the nonempty predecessor tail 1799–1939. Before a destructive placeholder can replace the native transcript, every predecessor tail block is to be either covered by validated durable history or preserved as a durable, reduction-respecting projection that the successor serves and can expand. Magic Context owns projection, archival preservation, transactional fencing, successor custody and recovery; the Claude Code gateway owns native capture, positional MID allocation, ingress admission, budget evidence and the placeholder send gate. The predecessor's in-flight historian is not the preservation carrier, and its epoch rejection remains intact. Explicitly saved memory and copied notes can survive independently, so the defect is a conversation-continuity hole, not proof that every fact or token in the tail disappeared.
 
@@ -552,13 +554,13 @@ Red-first mutation fixtures → named test below fails under the temporary contr
 ## non-goals
 
 - Change OpenCode or Pi behavior, activate D5 on those hosts, tighten their sparse coverage rules, or replace their differential golden expectations.
-- Implement the Claude Code gateway, its persistence API, send revocation, MID store or provider capture in this documentation work; only their required target semantics are specified here.
+- Implement the Claude Code gateway side (its attempt record, send revocation, MID allocation, provider capture); those target semantics are specified here as the shared contract and built by the gateway campaign.
 - Fall back to a provider-generated summary, forward a refused compaction body raw, replay a transformed predecessor request, or substitute the summary request's max_tokens and tools for normal-turn budget evidence.
 - Time-sweep SEALED archives, infer non-delivery from age or socket failure, or reclaim UNKNOWN and MAY_HAVE_REPLIED attempts by TTL.
 - Detect compaction mid-turn, change substance floors or scheduler fill policy, make the predecessor's in-flight fire the carrier, or relax the existing revert_epoch guard.
 - Restore already reduced source bodies, change ordinary same-key raw chunk expansion semantics, or claim that all predecessor facts vanished despite independently saved memory and notes.
 - Solve arbitrary same-incarnation or joint-database rollback, guarantee every future successor envelope fits a prior estimate, or establish a client maximum timeout from the D120 calibration.
-- Fire the spec pipeline, alter product code or tests, deploy D5, or commit to master as part of this consolidation.
+- Deploy D5 to production or bounce ck-mc as part of any slice; the fence-bearing slice-1 placement is one coordinated bounce agreed with the gateway owner after both campaigns close.
 - Provide any post-seal capacity degradation lane or promise that arming or publishing a fold makes the next request fit.
 
 ## open_questions
