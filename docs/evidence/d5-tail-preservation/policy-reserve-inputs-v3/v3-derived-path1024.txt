@@ -1,0 +1,16 @@
+<system-reminder>
+As you answer the user's questions, you can use the following context:
+# currentDate
+Today's date is 2026-09-12.
+
+      IMPORTANT: this context may or may not be relevant to your tasks. You should not respond to this context unless it is highly relevant to your task.
+</system-reminder>
+
+
+This session is being continued from a previous conversation that ran out of context. The summary below covers the earlier portion of the conversation.
+
+Summary:
+Conversation history compacted and preserved by Magic Context. Full context continues to be served automatically.
+
+If you need specific details from before compaction (like exact code snippets, error messages, or content you generated), read the full transcript at: /evidence/native-compaction-followup-claude-2.1.258-container-20260912/cases/auto-first-120s-503-then-200/claude-config/projects/-evidence-native-compaction-followup-claude-2-1-258-container-20260912-cases-auto-first-120s-503-then-200-workspace/3d363c25-fb46-483b-9316-d2f849d32eba.jsonl/Work-Projects-CortexKit-magic-context-worktrees-8f93aad09f2535d0-bg-0f6f2c0a4d1e/Work-Projects-CortexKit-magic-context-worktrees-8f93aad09f2535d0-bg-0f6f2c0a4d1e/Work-Projects-CortexKit-magic-context-worktrees-8f93aad09f2535d0-bg-0f6f2c0a4d1e/Work-Projects-CortexKit-magic-context-worktrees-8f93aad09f2535d0-bg-0f6f2c0a4d1e/Work-Projects-CortexKit-magic-context-worktrees-8f93aad09f2535d0-bg-0f6f2c0a4d1e/Work-Projects-CortexKit-magic-context-worktrees-8f93aad09f2535d0-bg-0f6f2c0a4d1e/Work-Projects-CortexKit-magic-context-worktrees-8f93aad09f2535d0-bg-0f6f2c0a4d1e/Work-Projects-CortexKit-magic-context-worktrees-8f93aad09f2535d0-bg-0f6f2c0a4d1e/Work-Projects-CortexKit-magic-context-worktrees-8f93aad09f2535d0-bg-0f6f2c0a4d1e/Work-Pr
+Continue the conversation from where it left off without asking the user any further questions. Resume directly — do not acknowledge the summary, do not recap what was happening, do not preface with "I'll continue" or similar. Pick up the last task as if the break never happened.
