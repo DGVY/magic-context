@@ -1,0 +1,441 @@
+{
+  "cases": {
+    "followup": [
+      {
+        "history_assertion": {
+          "compact_boundary_count": 1,
+          "following_request_number": 15,
+          "passed": true,
+          "summary_marker_present": true,
+          "warmup_markers_present": []
+        },
+        "http_statuses": [
+          503,
+          503,
+          200
+        ],
+        "name": "auto-first-two-503-then-200",
+        "native_transcript_lines_before_after": [
+          19,
+          33
+        ],
+        "ordinary_statuses": [
+          200
+        ],
+        "provider_observed_connection_close": false,
+        "response_elapsed_seconds": [
+          0.001183,
+          0.000961,
+          0.001506
+        ],
+        "retry_gaps_seconds": [
+          0.620728,
+          1.259356
+        ],
+        "summary_attempts": 3,
+        "terminal_outcome": "summary_accepted_and_replaced",
+        "trigger": "auto"
+      },
+      {
+        "http_statuses": [
+          503,
+          503,
+          503,
+          503,
+          503,
+          503,
+          503,
+          503,
+          503,
+          503,
+          503
+        ],
+        "name": "auto-persistent-summary-503",
+        "native_transcript_lines_before_after": [
+          19,
+          23
+        ],
+        "ordinary_statuses": [
+          200
+        ],
+        "original_harness_measurement": "incomplete: detector waited for a manual-style visible error",
+        "provider_observed_connection_close": false,
+        "reassessment": {
+          "all_warmup_markers_present": true,
+          "compact_boundary_count": 0,
+          "following_request_after_last_summary_seconds": 0.028376,
+          "following_request_body": "cases/auto-persistent-summary-503/request-bodies/request-21.json",
+          "following_request_http_status": 200,
+          "following_request_number": 21,
+          "passed": true,
+          "summary_marker_present": false,
+          "terminal_screen": "ordinary AUTO_TRIGGER reply completed; no model-visible compaction error"
+        },
+        "response_elapsed_seconds": [
+          0.000807,
+          0.001062,
+          0.001075,
+          0.001305,
+          0.001018,
+          0.001385,
+          0.008018,
+          0.00098,
+          0.000976,
+          0.001483,
+          0.001242
+        ],
+        "retry_gaps_seconds": [
+          0.534861,
+          1.077779,
+          2.148361,
+          4.918858,
+          9.519648,
+          18.538836,
+          37.214694,
+          36.965747,
+          35.736001,
+          34.640367
+        ],
+        "summary_attempts": 11,
+        "terminal_outcome": "automatic_fallback_history_retained",
+        "trigger": "auto"
+      },
+      {
+        "history_assertion": {
+          "compact_boundary_count": 1,
+          "following_request_number": 10,
+          "passed": true,
+          "summary_marker_present": true,
+          "warmup_markers_present": []
+        },
+        "http_statuses": [
+          503,
+          200
+        ],
+        "name": "manual-first-120s-503-then-200",
+        "native_transcript_lines_before_after": [
+          15,
+          30
+        ],
+        "ordinary_statuses": [
+          200
+        ],
+        "provider_observed_connection_close": false,
+        "response_elapsed_seconds": [
+          120.003473,
+          0.001295
+        ],
+        "retry_gaps_seconds": [
+          120.523991
+        ],
+        "summary_attempts": 2,
+        "terminal_outcome": "summary_accepted_and_replaced",
+        "trigger": "manual"
+      },
+      {
+        "history_assertion": {
+          "compact_boundary_count": 1,
+          "following_request_number": 14,
+          "passed": true,
+          "summary_marker_present": true,
+          "warmup_markers_present": []
+        },
+        "http_statuses": [
+          503,
+          200
+        ],
+        "name": "auto-first-120s-503-then-200",
+        "native_transcript_lines_before_after": [
+          19,
+          33
+        ],
+        "ordinary_statuses": [
+          200
+        ],
+        "provider_observed_connection_close": false,
+        "response_elapsed_seconds": [
+          120.004016,
+          0.002104
+        ],
+        "retry_gaps_seconds": [
+          120.611659
+        ],
+        "summary_attempts": 2,
+        "terminal_outcome": "summary_accepted_and_replaced",
+        "trigger": "auto"
+      }
+    ],
+    "initial_manual": [
+      {
+        "history_assertion": {
+          "basis": "native after-transcript contained the fake summary text, one compact_boundary, and the following post-compaction user turn",
+          "passed": true,
+          "provider_following_request_body_available": false
+        },
+        "http_statuses": [
+          200
+        ],
+        "name": "normal-200",
+        "native_transcript_lines_before_after": [
+          15,
+          30
+        ],
+        "ordinary_statuses": [
+          200
+        ],
+        "provider_observed_connection_close": false,
+        "response_elapsed_seconds": [
+          0.000495
+        ],
+        "retry_gaps_seconds": [],
+        "summary_attempts": 1,
+        "terminal_outcome": "summary_accepted",
+        "trigger": "manual"
+      },
+      {
+        "history_assertion": {
+          "basis": "native after-transcript contained the fake summary text, one compact_boundary, and the following post-compaction user turn",
+          "passed": true,
+          "provider_following_request_body_available": false
+        },
+        "http_statuses": [
+          503,
+          503,
+          200
+        ],
+        "name": "first-two-503-then-200",
+        "native_transcript_lines_before_after": [
+          15,
+          30
+        ],
+        "ordinary_statuses": [
+          200
+        ],
+        "provider_observed_connection_close": false,
+        "response_elapsed_seconds": [
+          0.000408,
+          0.003423,
+          0.000267
+        ],
+        "retry_gaps_seconds": [
+          0.62415,
+          1.214972
+        ],
+        "summary_attempts": 3,
+        "terminal_outcome": "summary_accepted",
+        "trigger": "manual"
+      },
+      {
+        "history_assertion": {
+          "basis": "native after-transcript retained all three warmup authored markers and contained neither fake summary text nor compact_boundary",
+          "passed": true,
+          "provider_following_request_body_available": false
+        },
+        "http_statuses": [
+          503,
+          503,
+          503,
+          503,
+          503,
+          503,
+          503,
+          503,
+          503,
+          503,
+          503
+        ],
+        "name": "persistent-summary-503",
+        "native_transcript_lines_before_after": [
+          15,
+          24
+        ],
+        "ordinary_statuses": [
+          200
+        ],
+        "provider_observed_connection_close": false,
+        "response_elapsed_seconds": [
+          0.000363,
+          0.000191,
+          0.000244,
+          0.000231,
+          0.000261,
+          0.000199,
+          0.001015,
+          0.000221,
+          0.000379,
+          0.000283,
+          0.000353
+        ],
+        "retry_gaps_seconds": [
+          0.628983,
+          1.019424,
+          2.062472,
+          4.541592,
+          8.11677,
+          19.709408,
+          38.944056,
+          37.617621,
+          32.356839,
+          38.049727
+        ],
+        "summary_attempts": 11,
+        "terminal_outcome": "model_visible_error",
+        "trigger": "manual"
+      },
+      {
+        "history_assertion": {
+          "basis": "native after-transcript contained the fake summary text, one compact_boundary, and the following post-compaction user turn",
+          "passed": true,
+          "provider_following_request_body_available": false
+        },
+        "http_statuses": [
+          200
+        ],
+        "name": "delayed-summary-20s",
+        "native_transcript_lines_before_after": [
+          15,
+          30
+        ],
+        "ordinary_statuses": [
+          200
+        ],
+        "provider_observed_connection_close": false,
+        "response_elapsed_seconds": [
+          20.009973
+        ],
+        "retry_gaps_seconds": [],
+        "summary_attempts": 1,
+        "terminal_outcome": "summary_accepted",
+        "trigger": "manual"
+      },
+      {
+        "history_assertion": {
+          "basis": "native after-transcript contained the fake summary text, one compact_boundary, and the following post-compaction user turn",
+          "passed": true,
+          "provider_following_request_body_available": false
+        },
+        "http_statuses": [
+          200
+        ],
+        "name": "delayed-summary-125s",
+        "native_transcript_lines_before_after": [
+          15,
+          30
+        ],
+        "ordinary_statuses": [
+          200
+        ],
+        "provider_observed_connection_close": false,
+        "response_elapsed_seconds": [
+          125.010154
+        ],
+        "retry_gaps_seconds": [],
+        "summary_attempts": 1,
+        "terminal_outcome": "summary_accepted",
+        "trigger": "manual"
+      }
+    ]
+  },
+  "created_at": "2026-09-12",
+  "executables": {
+    "container_image": {
+      "host_ports_published": [],
+      "image_id": "sha256:92c02fcf781a7e9304f9b62d9f6fc70d6490f974ad787c96323d1a81f8ac6b00",
+      "runtime_network": "none",
+      "tag": "ck-claude-calibration:2.1.258"
+    },
+    "followup_container": {
+      "requested": "/usr/local/bin/claude",
+      "resolved": "/usr/local/lib/node_modules/@anthropic-ai/claude-code/bin/claude.exe",
+      "sha256": "43dc490af55262edcb3e9b1cb315de22cc09ccb08bd52a4c39bc5eabaa63100f",
+      "version": "2.1.258 (Claude Code)"
+    },
+    "initial_host": {
+      "requested": "/opt/homebrew/bin/claude",
+      "resolved": "/opt/homebrew/Caskroom/claude-code@latest/2.1.258/claude",
+      "sha256": "b63136194160791c27cfa7b0403060d85eb0752991625fde8c09f9acacb17c78",
+      "version": "2.1.258 (Claude Code)"
+    }
+  },
+  "isolation_findings": {
+    "followup_run": {
+      "execution": "Docker container using exact Claude Code 2.1.258 package",
+      "mcp": "strict empty configuration",
+      "network": "docker --network none; fake provider and Claude shared container loopback",
+      "real_credentials_inherited": false,
+      "workspace": "/evidence outside the read-only /repo source mount"
+    },
+    "initial_run": {
+      "ancestor_settings_probe": "/Users/ufukaltinok/Work/Projects/CortexKit/thalamus/.claude/settings.local.json was probed and logged missing",
+      "environment_and_provider": "sanitized client environment and loopback fake provider only",
+      "explicit_claude_cli_default_in_secure_plist": false,
+      "handler_mutation_performed_during_review": false,
+      "launchservices_side_effect": "Claude logged registering per-HOME claude-cli URL handler bundles. LaunchServices later contained those test paths, so HOME isolation did not prevent a global registration side effect.",
+      "os_or_network_sandbox_claimed": false,
+      "read_only_resolution_afterward": "/Users/ufukaltinok/Applications/Claude Code URL Handler.app",
+      "verified_cli_knob_preventing_registration": null
+    }
+  },
+  "raw_artifacts": {
+    "followup": {
+      "absolute_path": "/Users/ufukaltinok/.local/share/cortexkit/alfonso/worktrees/cf59575c7ffe72b4/pool-2/.cortexkit/alfonso/evidence/native-compaction-followup-claude-2.1.258-container-20260912",
+      "bytes": 878251,
+      "file_count": 122,
+      "key_sha256": {
+        "REPORT.md": "e04b8dea34e2f1be7a4d0196a974f5dd7075a5d741f6aa004e05f6c2a989e417",
+        "manifest.json": "dd8bad98330759bb462f1b761270bfa7c2a5f5ae21f8c561d68bf8475865228e"
+      },
+      "tracked_after_review": false,
+      "tree_digest_format": "sha256 of sorted relative-path\\0file-sha256\\0size\\n rows",
+      "tree_sha256": "8dd4fad4e501f6b2a7086d41f8133c5d777993aa0bf59c99cfe887e29fdb3e1e"
+    },
+    "initial": {
+      "absolute_path": "/Users/ufukaltinok/.local/share/cortexkit/alfonso/worktrees/cf59575c7ffe72b4/pool-2/.cortexkit/alfonso/evidence/native-compaction-calibration-claude-2.1.258-20260911",
+      "bytes": 713340,
+      "file_count": 78,
+      "key_sha256": {
+        "REPORT.md": "0518f4548b54afb18767b9051da4bf0366b311af40e2126429a034c0b084abb4",
+        "manifest.json": "4487d45f7703bff9efdbd8968c16dd9ec003a114b8e4bfad5b096c8af1fc1201"
+      },
+      "tracked_after_review": false,
+      "tree_digest_format": "sha256 of sorted relative-path\\0file-sha256\\0size\\n rows",
+      "tree_sha256": "dad132d6baa50b8ba9b94d82a8f0bc77046f65f33ff5fe2b7c5eb7b6cd626a1c"
+    },
+    "note": "Raw files remain local and ignored. Paths and deterministic tree hashes detect later mutation."
+  },
+  "recommendation": {
+    "additional_boundary_grid": "Not recommended without a new design question.",
+    "client_tolerance": "The prior 125s success shows client tolerance beyond 120s; it is not a client-timeout measurement or a reason to raise the server budget.",
+    "policy_expiry_evidence": "At 120s, both manual and automatic first attempts completed with HTTP 503, retried once, accepted HTTP 200, replaced history with the unique summary, and completed a following ordinary request.",
+    "product_budget": "Keep D5 120s provisional preservation budget unchanged."
+  },
+  "run_notes": {
+    "followup_manifest_completed_at": "2026-09-12T00:16:18.496438+00:00",
+    "wrapper_exit": 137,
+    "wrapper_exit_context": "The outer docker command was interrupted after all four case results and completed_at were written; no container remained. Case conclusions are taken from raw provider/body/transcript evidence, not wrapper exit."
+  },
+  "schema": 1,
+  "scope": "sanitized review of local raw native-compaction evidence; no production implementation",
+  "source_provenance": {
+    "followup": {
+      "source_modified": true,
+      "source_sha": "dffd8df5f3f9426c37f4fe3709d2c1fa3a10ab3a",
+      "status_entries": [
+        "caller-declared; repository metadata unavailable in container"
+      ]
+    },
+    "initial": {
+      "source_modified": true,
+      "source_sha": "198433fdfac09c8a35f6304bf95ee37355ff3606",
+      "status_entries": [
+        "?? e2e/native_compaction_calibration.py",
+        "?? e2e/test_native_compaction_calibration.py"
+      ]
+    },
+    "review_worktree_modified": true
+  },
+  "retained_copy_roots": {
+    "/Users/ufukaltinok/.local/share/cortexkit/alfonso/worktrees/cf59575c7ffe72b4/pool-2/.cortexkit/alfonso/evidence/native-compaction-calibration-claude-2.1.258-20260911": "/Users/ufukaltinok/Work/Projects/CortexKit/thalamus/.cortexkit/alfonso/evidence/native-compaction-calibration-claude-2.1.258-20260911",
+    "/Users/ufukaltinok/.local/share/cortexkit/alfonso/worktrees/cf59575c7ffe72b4/pool-2/.cortexkit/alfonso/evidence/native-compaction-followup-claude-2.1.258-container-20260912": "/Users/ufukaltinok/Work/Projects/CortexKit/thalamus/.cortexkit/alfonso/evidence/native-compaction-followup-claude-2.1.258-container-20260912"
+  }
+}
