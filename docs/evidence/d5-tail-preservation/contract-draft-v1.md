@@ -3,24 +3,27 @@ title: "D5 tail preservation: seal → reply → redeem contract (MC module + st
 date: 2026-09-12
 status: draft
 validation_only: true
+includes:
+  - .cortexkit/alfonso/drafts/d5-rulings-v1.md
+  - .cortexkit/alfonso/drafts/d5-includes/d5-uncovered-tail-report.md
+  - .cortexkit/alfonso/drafts/d5-includes/calibration-REPORT.md
+  - .cortexkit/alfonso/drafts/d5-includes/policy-reserve-calc-v3.md
 # rigor_proposed: r2
 ---
 
 ## intent
-Build output (this spec's deliverable): the D5 tail-preservation implementation in the MC Rust module and store — the `mc.lineage` InternalService route on ck-mc with the six lifecycle operations and the begin/put/finish upload operations, the seal transaction and receipt schema in mc-store (a store migration, the fence-bearing slice), the successor carry projection and its per-block digest checks in the transform, the consumer rebinds listed in the constraints, the session.status read-only fields, and the executable invariants I1–I52 as Rust unit/integration tests plus hermetic E2E drills against the recorded specimen. Every clause below is normative for that implementation; the gateway-side semantics (Claude Code gateway) are the shared contract the gateway campaign implements against the same clauses. Slices land as: (1) mc-store schema + seal/receipt transaction, (2) mc.lineage route + authority + upload ops, (3) transform carry projection + consumer rebinds + status fields, (4) E2E drills with the specimen; slice 1 moves the store fence and lands with one coordinated ck-mc bounce.
+Build output: the D5 tail-preservation implementation in the MC Rust store and module — the mc.lineage InternalService route on ck-mc; ticket, prepare, resolve, redeem, release, cancel and chunked-upload operations; the seal transaction and receipt schema; successor carry with per-block digest checks; the complete consumer rebind; the session.status read-only d5 object; and executable I1–I53 identity-mapped gates, with MC-owned Rust and hermetic specimen rows shipped here. Gateway-side clauses are the shared target contract for the separate Claude Code gateway campaign; these slices do not ship its attempt store, native capture, positional allocator or send gate. Clause 27 is the sole slice partition and acceptance assigns every test to exactly one slice. Slice 0 imports the immutable fixtures before product slices begin. Slice 1 lands only after both campaigns close, when the release owner performs one fence-bearing coordinated ck-mc bounce; slice workers never restart ck-mc.
 
+The executed defect proof shows a successor with real history ending at ordinal 1798, an empty continuation boundary at 1940, and no automatic recovery for predecessor tail 1799–1939. Before a destructive placeholder replaces the native transcript, every predecessor tail block is covered by validated durable history or preserved as a durable reduction-respecting projection that the successor serves and expands. Magic Context owns projection, archive, transactional fencing, successor custody and recovery. The gateway owns native capture, positional MID allocation, ingress admission, budget evidence and the placeholder send gate. P's in-flight historian is not the carrier, and epoch rejection remains intact. Saved memory and copied notes survive independently; the defect is a conversation-continuity hole, not proof that every fact or token vanished.
 
-The executed D5 defect proof shows a successor with real history ending at ordinal 1798, an empty continuation boundary at 1940, and no automatic conversation recovery for the nonempty predecessor tail 1799–1939. Before a destructive placeholder can replace the native transcript, every predecessor tail block is to be either covered by validated durable history or preserved as a durable, reduction-respecting projection that the successor serves and can expand. Magic Context owns projection, archival preservation, transactional fencing, successor custody and recovery; the Claude Code gateway owns native capture, positional MID allocation, ingress admission, budget evidence and the placeholder send gate. The predecessor's in-flight historian is not the preservation carrier, and its epoch rejection remains intact. Explicitly saved memory and copied notes can survive independently, so the defect is a conversation-continuity hole, not proof that every fact or token in the tail disappeared.
-
-Calibration: CURRENT-CC Claude Code 2.1.258, exact-version network-disabled fake-provider container; raw hashes and native boundaries verified. AUTO 503-503-200 recovers; persistent AUTO retains history, no summary or boundary, resumes exact pending ordinary request; manual retains history and errors. Manual 120.003 s and AUTO 120.004 s tolerate 503 then retry. Success at 125 s proves tolerance, not a client maximum or 150 s extrapolation. Initial host isolation limits are not container claims. Digests: report `25145bcfaba48dfeedc0753063494a9d484af8ca9956b8d43f4ba3b7192e7693`; manifest `79cc7ac955ed220fcc9b371597fd414e7c47280c4f2038fa47dad9844746a2ad`.
-
+Calibration: CURRENT-CC Claude Code 2.1.258, exact-version network-disabled fake-provider container; raw hashes and native boundaries verified. AUTO 503-503-200 recovers; persistent AUTO retains history, emits no summary or boundary and resumes the exact pending ordinary request; manual retains history and errors. Manual 120.003 s and AUTO 120.004 s tolerate 503 then retry. Success at 125 s proves tolerance, not a client maximum or 150 s extrapolation. Initial host isolation limits are not container claims. Report digest: 25145bcfaba48dfeedc0753063494a9d484af8ca9956b8d43f4ba3b7192e7693. Sanitized calibration-manifest input digest: 79cc7ac955ed220fcc9b371597fd414e7c47280c4f2038fa47dad9844746a2ad; clause 27 fixes its meaning and import gate.
 ## constraints
 
 ### types
 
-1. **Vocabulary and preservation boundary.** P is predecessor, S successor, T ordered uncovered tail. Source is transport-normalized native blocks, excluding recognized compaction additions by provenance. A is durable MC applied state: red units, skeleton, strip, caveman, tags, pending drops and ledger. V=project(source,A) includes never-served blocks. Source authorizes material; A authorizes permissions. The fixed placeholder is the exact summary-wrapper fixture in acceptance. Gateway clauses specify target semantics, not existing APIs. Every unfolded block MUST have validated real-history coverage or durable carry under A. Empty lineage boundaries prove no coverage. P's in-flight publisher is not the carrier.
+1. **Vocabulary and preservation boundary.** P is predecessor, S successor and T ordered uncovered tail. Source is normalized native blocks minus recognized compaction additions. A is durable reductions, tags, drops and ledger; V=project(source,A) includes never-served blocks. Source authorizes material and A permissions. Gateway clauses are target semantics. Every unfolded block MUST have validated real coverage or durable carry. Empty boundaries cover nothing; P's publisher is not the carrier.
 
-2. **Shared wire definitions.** New schema_version: 1 contract: exact fields and variants, preserved order, explicit emptiness and unknowns. Option is none or some, never zero. IDs and keys are distinct opaque types; numeric types are checked nonnegative integers. Digest is SHA-256 of canonical versioned bytes. BootId is not envelope validity. Bytes use base64 in JSON; unions use kind.
+2. **Shared wire definitions.** schema_version 1 fixes fields, variants, order, emptiness and unknowns. Option is none or some, never zero. IDs and keys are distinct; numbers are checked nonnegative integers. Digest follows 2a. BootId is not validity. JSON bytes are base64 and unions use kind.
 
 ```text
 MaterialFingerprint = { digest: Digest, normalization_version: integer, excluded_additions: ordered list<ProvenanceTag>
@@ -31,22 +34,37 @@ AdmissionTicket = { resolve_generation: ResolveGeneration, P: SessionKey, agent:
 IngressEvidence = { boot_id: BootId, watermark: IngressSequence, sequence_seen: IngressSequence, ownership_id: opaque
   identity }
 LineageEdge = { edge_id: EdgeId, predecessor_key: SessionKey, successor_key: SessionKey, agent: AgentId, F:
-  MaterialFingerprint, lineage_id: LineageId, continuation_identity: BlockIdentity }
+  MaterialFingerprint, lineage_id: LineageId, continuation_identity: RecognitionIdentity,
+  native_continuation_identity: BlockIdentity }
+RecognitionIdentity = { receipt_id: ReceiptId, recognition_token: RecognitionToken }
+ReceiptId = UUID36
+RecognitionToken = lowercase_base32_20
 NativeMessage = { position: MessagePosition, ordinal: Ordinal, mid: Mid, role: Role, blocks: ordered list<NativeBlock> }
-NativeBlock = { index: BlockIndex, kind: BlockKind, bytes: bytes, provenance: ProvenanceTag, tool_links: explicit
-  tool-arc metadata }
+NativeBlock = { index: BlockIndex, kind: BlockKind, bytes: bytes, provenance: ProvenanceTag, tool_links: ordered
+  list<ToolArc> }
 SourceSegment = { normalization_version: integer, messages: ordered list<NativeMessage>, excluded_additions: ordered
   list<ProvenanceTag> }
+Role = user | assistant | system | tool | other { wire_role: text }
+BlockKind = text | reasoning | redacted_reasoning | tool_use | tool_result | image | document | other {
+  wire_kind: text }
+ProvenanceTag = native | recognized_compaction { addition_kind: text } | inherited { receipt_id: ReceiptId,
+  origin_identity: BlockIdentity }
+ToolArc = { tool_use_id: text, use_identity: Option<BlockIdentity>, result_identity: Option<BlockIdentity> }
+NormalizedMessage = { position: MessagePosition, ordinal: Ordinal, role: Role, blocks: ordered list<NormalizedBlock> }
+NormalizedBlock = { index: BlockIndex, kind: BlockKind, bytes: bytes, provenance: ProvenanceTag, tool_links: ordered
+  list<ToolArc> }
+AppliedStateSnapshot = { schema_version: 1, canonical_payload: bytes }
 NormalProjectionIdentities = { model: ModelId, profile: ProfileId, tool_surface: Digest, guidance_surface: Digest,
   system_surface: Digest }
 PFence = none | SEALED { receipt_id: ReceiptId } | REDEEMED { successor_key: SessionKey }
 FenceSnapshot = { p_fence: PFence, fence_generation: FenceGeneration, resolve_generation: ResolveGeneration }
-Refusal = { reason: RefusalReason, receipt_id: Option<ReceiptId>, details: typed reason-specific evidence }
+Refusal = { reason: RefusalReason, receipt_id: Option<ReceiptId>, details: RefusalDetails }
 AttemptOutcome = SEALED { receipt: ReceiptV1 } | REFUSED { refusal: Refusal, negative: NegativeProof } | REDEEMED {
   receipt_id: ReceiptId, successor_key: SessionKey } | RELEASED { receipt_id: ReceiptId }
 PrepareResult = { attempt_outcome: AttemptOutcome, p_fence: PFence, fence_generation: FenceGeneration }
-ResolveResult = { attempt_outcome: Option<AttemptOutcome>, p_fence: PFence, fence_generation: FenceGeneration,
-  resolve_generation: ResolveGeneration }
+ResolveResult = RESOLVED { attempt_outcome: Option<AttemptOutcome>, p_fence: PFence, fence_generation:
+  FenceGeneration, resolve_generation: ResolveGeneration } | REFUSED { refusal: Refusal, p_fence: PFence,
+  fence_generation: FenceGeneration, resolve_generation: ResolveGeneration }
 RedeemResult = REDEEMED { receipt_id: ReceiptId, successor_key: SessionKey, existing: boolean, fence_generation:
   FenceGeneration } | REFUSED { refusal: Refusal } | lineage_corrupt { receipt_id: ReceiptId }
 ReleaseResult = RELEASED { receipt_id: ReceiptId, already_released: boolean, fence_generation: FenceGeneration } |
@@ -67,7 +85,7 @@ BlockIdentity = { mid: Mid, index: BlockIndex, ordinal: Ordinal }
 ReceiptV1 = { schema_version: 1, receipt_id: ReceiptId, attempt_id: AttemptId, predecessor_key: SessionKey,
   successor_key: Option<SessionKey>, lineage_id: LineageId, owner_key: SessionKey, agent: AgentId, incarnation:
   Incarnation, aliases: ordered set<{attempt_id: AttemptId, ticket: AdmissionTicket}>, F: MaterialFingerprint,
-  admission_ticket: AdmissionTicket, sealed_state: Option<{ P_state_version: StateVersion, projection_key: opaque identity, applied_state_hash: Digest, epoch_before: integer, epoch_after: integer, fence_generation: FenceGeneration,
+  recognition_token: RecognitionToken, admission_ticket: AdmissionTicket, sealed_state: Option<{ P_state_version: StateVersion, projection_key: opaque identity, applied_state_hash: Digest, epoch_before: integer, epoch_after: integer, fence_generation: FenceGeneration,
   resolve_generation: ResolveGeneration }>, ingress: IngressEvidence, frontiers: Option<SuccessorFrontiers>,
   representation: carry | refused, budget: BudgetRecord, manifest: Option<ManifestV1>, refs: Option<{ archive_id:
   ArchiveId, manifest_digest: Digest, applied_state_hash: Digest }>, pending_drops: ordered list<CommandTarget>,
@@ -92,7 +110,7 @@ ManifestV1 = { schema_version: 1, normalization_version: integer, encoding_versi
   BlockIndex, kind: BlockKind, predecessor_identity: BlockIdentity, provenance: native { attempt_id: AttemptId,
   predecessor_key: SessionKey, message_position: MessagePosition } | inherited_from { receipt_id: ReceiptId,
   origin_identity: BlockIdentity }, source: { len: ByteCount, sha256: Digest }, served: { len: ByteCount, sha256: Digest
-  }, applied_unit: Option<UnitKey>, tool_links: tool-arc metadata }> }> }
+  }, applied_unit: Option<UnitKey>, tool_links: ordered list<ToolArc> }> }> }
 CarryProjectionV1 = { schema_version: 1, receipt_id: ReceiptId, archive_id: ArchiveId, manifest_digest: Digest,
   row_version: RowVersion, coverage_identity: Option<BlockIdentity>, continuation_identity: BlockIdentity, members:
   ordered list<{ identity: BlockIdentity, validation: frozen { served_sha256: Digest } | projection_digest { sha256:
@@ -111,7 +129,8 @@ EnvelopeSlot = available { record: EnvelopeRecordV1 } | absent { reason: text } 
 PrepareBudgetEvidence = { schema_version: 1, geometry: GeometryV1, envelope: EnvelopeSlot, intended_normal_projection:
   NormalProjectionIdentities }
 ReserveRecord = { model: ModelId, tokens: TokenCount, source: window-geometry | config, units: tokens }
-PolicyReserveRecord = { tokens_estimate: TokenCount, reminder_tokens: TokenCount, estimator: {name: mc-tokenizer,
+PolicyReserveRecord = { tokens_estimate: TokenCount, reminder_tokens: TokenCount, recognition_suffix_tokens:
+  TokenCount, recognition_suffix_bytes: ByteCount, recognition_suffix_sha256: Digest, estimator: {name: mc-tokenizer,
   version: text}, model: ModelId, profile: ProfileId, fixture_manifest_sha256: Digest, margin: ratio,
   supported_profiles: list<ProfileId>, dynamic_field_limits: list<{field: text, limit: ByteCount}>, source: fixtures }
 BudgetRecord = { schema_version: 1, geometry_wire: GeometryV1, reserve_accounting: once_carved | none_declared,
@@ -130,27 +149,54 @@ SuccessorReliefState = none | armed { range: {first: Ordinal,
   last: Ordinal}, refusal_seq: integer, armed_at: Timestamp } | assembled { firing_id: FiringId, range: {first: Ordinal, last: Ordinal} }
   | published { compartment_seq: Sequence, published_at: Timestamp } | unavailable { reason: no_outstanding_carry |
   below_min_chunk | system_tools_exceed_hard | producer_unavailable }
-HealthD5 = { sealed_unredeemed: ordered list<{receipt_id: ReceiptId, age: integer}>, lineage_corrupt: ordered
-  list<ReceiptId>, refused_by_generation_responses: integer, refused_by_generation_attempts: integer,
-  refused_by_tombstone: integer, d5: {preserved_but_blocked: boolean, overflow_refusals: integer}, successor_relief:
-  ordered list<{ successor_key: SessionKey, relief: SuccessorReliefState, overflow_refusals: integer }>, state: ok |
-  preserved_but_blocked | lineage_corrupt }
+HealthD5 = { sealed_unredeemed: ordered list<{receipt_id: ReceiptId, age_seconds: integer}>, lineage_corrupt:
+  ordered list<ReceiptId>, refused_by_generation_responses: integer, refused_by_generation_attempts: integer,
+  refused_by_tombstone: integer, blocked: {preserved_but_blocked: boolean, overflow_refusals: integer},
+  successor_relief: ordered list<{ successor_key: SessionKey, relief: SuccessorReliefState, overflow_refusals:
+  integer }>, uncovered_descent: ordered list<{lineage_id: LineageId, first: Ordinal, last: Ordinal}>,
+  unrecognized_successors: integer, last_unrecognized_token_prefix: Option<text>, state: ok | preserved_but_blocked |
+  lineage_corrupt }
 NeverSendProof = { receipt_id: ReceiptId, incarnation: Incarnation, aliases: ordered set<AttemptId>, retries: ordered
   set<RetryIdentity>, revocation_id: opaque durable identity }
 CancelAssertion = cancelled_before_delivery
 UploadRef = {upload_id: UploadId, digest: Digest, total_bytes: ByteCount}
 PrepareSource = inline {segment: SourceSegment} | ref {upload: UploadRef}
 EnvelopePending = pending {sequence: IngressSequence}
+RefusalReason = invalid_arguments | ticket_invalid | stale_incarnation | budget_unknown | budget_model_mismatch |
+  budget_evidence_mismatch | token_cap | byte_cap | p_already_sealed | seal_material_mismatch | resolved_absent |
+  seal_after_tombstone | seal_after_resolve | attempt_quota | sealed_unredeemed | lineage_corrupt |
+  successor_overflow | already_redeemed | invalid_terminal_state | upload_declaration_conflict | chunk_conflict |
+  upload_digest_mismatch | upload_incomplete | upload_quota | d5_receipt_required | d5_downgrade_refused
+RefusalDetails = none | field {field: text, reason: text} | cap {cap: text, actual: integer, limit: integer,
+  units: text} | winner {receipt_id: ReceiptId} | resolved_absent {attempt_id: AttemptId, incarnation: Incarnation} |
+  upload {upload_id: Option<UploadId>, seq: Option<ChunkSeq>, declared_digest: Option<Digest>, actual_digest:
+  Option<Digest>} | successor_capacity {estimated: TokenCount, actual: TokenCount, actual_source: mc_estimate |
+  provider, usable_hard: TokenCount}
+TicketResult = ISSUED {ticket: AdmissionTicket} | REFUSED {refusal: Refusal}
+BeginResult = BEGUN {upload_id: UploadId} | REFUSED {refusal: Refusal}
+PutResult = STORED {seq: ChunkSeq, chunk_digest: Digest} | REFUSED {refusal: Refusal}
+FinishResult = FINISHED {upload: UploadRef} | REFUSED {refusal: Refusal}
+LineageRequest = tagged union kind ticket | prepare | resolve | redeem | release | cancel | begin | put | finish;
+  each variant's fields are exactly its same-named clause 3 arguments, without an extra args wrapper
+LineageResponse = ticket {result: TicketResult} | prepare {result: PrepareResult} | resolve {result: ResolveResult} |
+  redeem {result: RedeemResult} | release {result: ReleaseResult} | cancel {result: CancelResult} | begin {result:
+  BeginResult} | put {result: PutResult} | finish {result: FinishResult}
 ```
 
-   Negative receipts keep attempt, incarnation and reporting identity, not invented archive or manifest; absent optionals stay absent. Receipt proof is row-backed only. Snapshot bytes and archive_id immutable; lifecycle, owner, commands and post-redeem state mutable. successor_key, edge and post_redeem appear only at redeem. Evolution preserves replay, refuses incompatibility. Transfer full manifest once, then ordered reference proofs; missing is not empty. Protecting references carry predecessor_key, nullable successor_key, lineage_id, owner_key and incarnation; blobs support multiple owners.
+2a. **CE1 and digest preimages.** CE1 encoding_version 1 uses fixed unsigned big-endian U32BE and U64BE. Integer-like scalars are checked U64; bool is byte 0 or 1; Digest is 32 raw bytes; Timestamp is length-prefixed canonical UTC RFC3339; IDs, keys, text and bytes are U64BE length plus UTF-8 or raw payload. Lists are U64BE count plus members; option is byte 0 or byte 1 plus value; union is zero-based declaration-order U32BE plus fields; struct is printed field order. Ordered sets sort full encodings, reject duplicates, then encode as lists. Ratio is reduced U64BE numerator and nonzero denominator. Field names, JSON, host, clock and locale are excluded. AppliedStateSnapshot.canonical_payload deterministically exports units, tags, drops and ledger in stable key order or refuses.
+
+   H(tag,v,x)=SHA-256(U32BE tag length || raw ASCII tag || U32BE(v) || CE1(x)). Closed assignments: F uses mc.d5.F.v1 over {normalization_version,excluded_additions,messages:NormalizedMessage}; printed normalized fields include position, ordinal, index and tool links but omit MID, attempt_id and retry. manifest_digest uses mc.d5.manifest.v1 over ManifestV1; archive_id mc.d5.archive.v1 over {schema_version:1,encoding_version,manifest,V,A} without archive_id; applied_state_hash mc.d5.applied.v1 over A. source.sha256 and served.sha256 use mc.d5.block.source.v1 and mc.d5.block.served.v1 over bytes; frozen equals served. Unit projection uses mc.d5.unit-projection.v1 over {unit,row_version,bytes}; aggregate uses mc.d5.projection.v1 over {row_version,units:ordered list<{unit,bytes}>}. KnownBytes uses mc.d5.known-bytes.v1; recognition suffix mc.d5.recognition-suffix.v1; request bytes mc.d5.envelope-request.v1; tool, guidance and system surfaces use mc.d5.surface.tool.v1, mc.d5.surface.guidance.v1 and mc.d5.surface.system.v1 over exact normal UTF-8 bytes. Digests exclude themselves. Upload and chunk digests are plain SHA-256 over ordered raw upload or chunk; fixture hashes are plain file SHA-256.
+
+   mc-store owns canonical::encode and canonical::fingerprint; consumers share crates/mc-store/tests/fixtures/d5-canonical-v1.json with a fixed vector for every assignment. Sentinels: empty normalized F v1 8273dd5001275e071997f82a4d46744d643b5ae58748b5852d3d05e204189103; served bytes tail plus LF 6ccf580d213ba5843f6c4073d3f9a3885be25a84ce8c26ba1e68765f9b97bd55; unit u1 row 7 bytes red 3dc9079367264990f8614660b3f0a1f5ab3b133c4ed3e841bff793f38a84f90a; system bytes system 650555e729bf422eb271d9134fc00508dbd63b6bebeeffeccd0f1df045ab0722. Rust and gateway reproduce constants independent of the evaluator.
+
+2b. **Session identity mapping.** SessionId and SessionKey are distinct wrappers over one exact persisted UTF-8 conversation-key string; conversions are total byte-preserving inverses with no join or normalization. Status maps session_id to owner_key; explicit delete reverses it. Tests pin both column names. Negative receipts invent no archive; absent options stay absent. Snapshot bytes and archive_id are immutable while lifecycle, owner, commands and post_redeem may change; successor_key and edge appear only at redeem. Missing proof is not empty. References carry predecessor_key, nullable successor_key, lineage_id, owner_key and incarnation; blobs may have multiple owners.
 
 ### lifecycle ops
 
 3. **Operations and result discipline.** The MC operation surface is:
 
 ```text
-attempt.ticket(P: SessionKey, agent: AgentId, incarnation: Incarnation) -> AdmissionTicket
+attempt.ticket(P: SessionKey, agent: AgentId, incarnation: Incarnation) -> TicketResult
 prepare(P: SessionKey, agent: AgentId, F: MaterialFingerprint,
   source_segment: PrepareSource, attempt_id: AttemptId, incarnation: Incarnation,
   admission_ticket: AdmissionTicket, ingress: IngressEvidence,
@@ -164,59 +210,48 @@ release(receipt_id: ReceiptId, release_attempt_id: ReleaseAttemptId,
 cancel(receipt_id: ReceiptId, incarnation: Incarnation,
   assertion: CancelAssertion) -> CancelResult
 lineage.begin(attempt: AttemptKey, ticket: AdmissionTicket, kind: source_segment,
-  total_bytes: ByteCount, total_chunks: integer, digest: Digest) -> {upload_id: UploadId}
-lineage.put(upload_id: UploadId, seq: ChunkSeq, bytes: base64)
-  -> {seq: ChunkSeq, chunk_digest: Digest}
-lineage.finish(upload_id: UploadId, digest: Digest) -> {upload: UploadRef}
+  total_bytes: ByteCount, total_chunks: integer, digest: Digest) -> BeginResult
+lineage.put(upload_id: UploadId, seq: ChunkSeq, bytes: base64) -> PutResult
+lineage.finish(upload_id: UploadId, digest: Digest) -> FinishResult
 ```
 
-   Restart read: attempt_id, F and ticket none → outcome none and current fence snapshot, no writes or bumps. Closure: all three present → some(outcome); partial combinations refuse. MC checks attempt, ticket, ingress, source, envelope lineage and incarnation consistency. Fresh success is SEALED; terminal retries replay. existing and already_released are idempotent success, not send rights. Absence and PREPARING grant no admission; timeout is UNKNOWN.
+   Resolve all-none is a write-free restart snapshot; all-present closes; partial arguments return typed invalid_arguments plus transactional fence and generations. MC validates identities and evidence. Fresh prepare is SEALED and terminals replay; existing and already_released confer no send right. Absence and PREPARING grant nothing; timeout is UNKNOWN.
 
-4. **Stateless tickets and generation fencing.** attempt.ticket only samples the current fence: no MC write, issuance record, ticket ledger, custody, orphan or issuance-idempotency concept. No ticket_id. Lost or unused samples are discardable.  Admission and seal compare generation and incarnation; delayed handlers never refresh.  resolve_generation closes potential seals; fence_generation protects ordinary admission; neither counts delivery or timeouts. resolve is not acquisition.
+3a. **Typed operation transport.** Unary JSON is one version-1 request or matching response with kind; bytes are base64, absent options omitted, PFence.none present. Lifecycle refusal with proof and fence stays inside prepare or resolve; validation and upload conflicts stay in their op result. Only framing, unidentifiable JSON, service absence and authority denial use outer ErrorBody. Fixtures pin SEALED prepare and rowless resolve beside another SEALED fence.
 
-5. **Projection and positional identity.** Project all blocks before seal: applied units supply permitted reductions; other blocks use ordinary defer serialization. Do not process the summary instruction as a turn, create reductions or bind deferred commands. Preserve message order, grouping, roles, block kinds and tool links. Each native message has a gateway positional native_mid and separate block indexes. Manifest binds native_mid to P's predecessor_identity (mid#index): A and tags use predecessor_identity, serving uses native_mid. Retain issued predecessor identities; allocate deterministic never-served identities with seal. Distinct equal-content positions retain distinct MIDs; retries reuse allocation.
+4. **Stateless tickets and generation fencing.** attempt.ticket samples the fence without write, issuance record, ledger, custody, orphan or ticket_id; lost samples are discardable. Admission and seal compare its generation and incarnation, and delayed handlers never refresh it. resolve_generation closes potential seals; fence_generation protects ordinary admission; neither is a delivery or timeout counter.
 
-   F binds normalized bytes, order, roles, kinds, provenance and exclusions; excludes MIDs, attempt_id and retry markers. Same-F aliases carry tickets and identical positional seal allocation; mismatch refuses seal_material_mismatch. Losing provisional allocation binds nothing. Tag identities from predecessor (mid,index) commit with A and receipt CAS, never independently. Intended projection identities describe normal successor, not summary tools or max_tokens.
+5. **Projection and positional identity.** Before seal, applied units reduce and other blocks use defer serialization; summary instruction creates no turn, reduction or command. Preserve order, grouping, roles, kinds and tool arcs. native_mid is positional and distinct from block index; manifest maps it to predecessor_identity used by A and tags, while serving uses native_mid. Issued IDs persist; seal allocates new positions deterministically; equal bytes retain distinct MIDs and retries reuse them. F is clause 2a. Same-F aliases share one allocation; mismatch refuses and losers bind nothing. Tags commit with A and receipt CAS. Intended identities are normal, never summary.
 
-6. **Atomic seal and freshness.** Finish awaits, projection, estimates, encoding and optional grace before one synchronous no-wait transaction committing archive references, SEALED, identities, P.sealed_for, revert_epoch bump and fence_generation change atomically. CAS checks incarnation, original ticket generation, tombstone absence, P.state_version, A hash, frontiers, pending-drop count and all projection dependencies. Publisher or command changes require recompute and rebudget within D or refusal; stale SQLite snapshots retry whole read and CAS. Pre-seal publication changes checked dependencies; pre-seal assembly publishing afterward fails unchanged revert_epoch before any compartment or transcript append. Expiry checks cannot exclude a late commit.
+6. **Atomic seal and freshness.** After awaits and encoding, one no-wait transaction commits archive refs, SEALED, identities, P.sealed_for, revert_epoch and fence_generation. CAS checks incarnation, original ticket, tombstone, P and A, frontiers, drops and all dependencies. Changes recompute; stale snapshots retry whole read and CAS. Gateway timeout never aborts MC. Pre-seal assembly publishing later fails epoch before append.
 
-7. **Prepare identity and coalescing.** CAS selects one receipt and manifest for same-(P,agent,F), aliasing every coalesced observer. Refused attempts never revive. Different-F loser gets p_already_sealed with diagnostic winner ID, no authority or winner change; retain losing input queued or refused. Pin both winner orderings. After RELEASED a new same-F attempt may reuse identical content-addressed bytes, but new A and identities need not match historical candidates.
+7. **Prepare identity and coalescing.** CAS chooses one receipt and manifest for same-(P,agent,F) and records every observer alias. Refused attempts never revive. A different-F loser gets p_already_sealed with diagnostic winner ID but no authority; its input remains queued or refused. Both winner orders are pinned. After RELEASED, a new attempt may reuse bytes but not historical A or identities.
 
-8. **Authoritative attempt resolution.** One store transaction returns existing attempt or alias outcome and current P fence plus both generations. Unrelated generation advances do not erase SEALED or REDEEMED. Absent attempt resolution durably prevents future seal: if negative capacity permits, persist incarnation-scoped resolved_absent tombstone, checked by seal with seal_after_tombstone. At saturated current-incarnation negative bound, allocate no row; CAS-increment resolve_generation only for a still-valid ticket, never re-bump an invalidated one.
+8. **Authoritative attempt resolution.** One transaction returns outcome, P fence and generations; later generations never erase positives. Absent resolution writes an incarnation tombstone when possible; at saturation it writes no row and bumps resolve_generation only for a valid ticket. Rowless REFUSED is resolved_absent with no receipt and generation_fence from the original ticket, fenced_by=ticket.resolve_generation+1. Its replay is identical and never re-bumps; delayed prepare returns seal_after_resolve with that proof and no archive. New ID and ticket may proceed; no refresh. NegativeProof is only tombstone_row or generation_fence. Separate response, attempt and tombstone counters count replay only as response.
 
-   Rowless result is AttemptOutcome::REFUSED: refusal reason resolved_absent, receipt_id none, details resolved_absent{attempt_id,incarnation}; negative generation_fence takes incarnation and invalidated_ticket_generation from the original bound ticket, with fenced_by=ticket.resolve_generation+1 (the fixed minimal invalidating generation). Replay from AttemptKey and original ticket is identical after unrelated resolves; current fence diagnostics advance outside NegativeProof. Delayed prepare returns seal_after_resolve with the same proof, no new archive or fence. New ID and sample may succeed. Recovery never refreshes an old attempt; missing local identity uses read-only restart form.
+9. **UNKNOWN, interleavings and admission.** Elapsed D, missing row, read absence and false delivery bit prove no freedom. Resolve bound identity and ticket; restart is all-none. p_fence still reports other attempts. Seal-first returns receipt; resolve-first blocks; lost reply retains barrier. Absence, UNKNOWN and PREPARING grant nothing. Admission holds ingress through admit or consumes current fence_generation; cached none is invalid.
 
-   NegativeProof has only tombstone_row and generation_fence. Status, health and sentinel separate refused_by_generation_responses, refused_by_generation_attempts and refused_by_tombstone; replay increments responses, not distinct attempts. Counters introduce neither receipt rows nor ticket issuance ledger.
+10. **Redeem and successor custody.** ReceiptId is lowercase hyphenated UUID36. Each new receipt seals one 96-bit random RecognitionToken as 20 unpadded lowercase RFC4648 base32 characters; retries and aliases replay it. Gateway appends exactly ` mc-d5:<UUID36>:<base32_20>`, 64 ASCII bytes including space. Recognition scans direct scalar or text-block content of the first native user message, never tool_result. Exactly one marker must match the current SEALED (P,agent,incarnation) receipt with durable MAY_HAVE_REPLIED or ack; zero, duplicate, conflict, or a pre-SEND marker-absent MAY=false record fails. Wrapper, predecessor prefix, response, SSE and bare placeholder are irrelevant. LineageEdge binds receipt-token and observed native block separately. Failure preserves SEALED, counts unrecognized_successors with bounded prefix, forwards nothing and mints no S; redeem mismatch is seal_material_mismatch.
 
-9. **UNKNOWN, interleavings and admission.** Elapsed D, missing gateway row, read-only absence and false delivery bit do not prove P unfenced. Resolve bound attempts with original identity and ticket; state queries use attempt_id none. p_fence independently reports other attempts. Seal-first returns receipt; resolve-first blocks old seal. Physical absence and UNKNOWN are legitimate transients, never refusal or PREPARING permission. Lost resolve reply retains barrier. Admission holds exclusive ingress ownership through read and admit or consumes current fence_generation at admission; cached none is not standing permission.
+   After recognition, one transaction validates edge and fences, binds edge, mints declared S, copies history and A, installs carry, transfers custody, sets native frontiers and marks REDEEMED. Pre-commit crash leaves SEALED and no S; retry returns the same S. Different S refuses. Missing S is lineage_corrupt, never reminted; REFUSED and RELEASED cannot redeem.
 
-10. **Redeem and successor custody.** Only after verified placeholder delivery and observed native successor, redeem checks edge material, matching SEALED and intact fences. Mismatch returns seal_material_mismatch without deleting archives or queued input. One transaction binds stable edge once, mints caller-declared successor_key, copies real compartments and ordinary chunk transcripts, preserves tags and applicable A, installs inherited membership, transfers protecting references and commands, sets frontiers and marks REDEEMED. No speculative S before harness replacement.
-
-   Before-commit crash leaves SEALED and no partial S; after-commit crash leaves complete S. Retry returns same S without new lineage row, edge, tags or MIDs; different bound successor_key refuses. Missing S behind REDEEMED is loud lineage_corrupt in result and health, never remint. REFUSED and RELEASED cannot redeem; discarded source and in-memory P snapshots are unnecessary.
-
-11. **Terminal release and cancel.** Release and redeem CAS one receipt, with one terminal winner. Stable (receipt_id,release_attempt_id) survives unknown-response retries: release CASes SEALED to RELEASED or returns existing RELEASED idempotently; REDEEMED refuses already_redeemed, other invalid states refuse. Atomically restore all frozen pending and post-seal commands to P with provenance, ledger and (command_id,target) dedup before clearing fence. Never roll epoch backward. Cancel records cancelled_before_delivery as hint only: no terminal undo, discharge, retention clock or archive removal.
+11. **Terminal release and cancel.** Release and redeem share one CAS. Stable (receipt_id,release_attempt_id) survives unknown reply: SEALED becomes RELEASED or replays; REDEEMED gives already_redeemed. It restores frozen commands to P with provenance, ledger and target dedup before clearing fence; epoch never rolls back. Cancel records only a hint, never undo, discharge, retention or deletion.
 
    Lifecycle: absent→SEALED→REDEEMED or RELEASED; alternatively absent→REFUSED with row or generation proof. REFUSED creates no new archive or admission fence; rowless logical refusal is still fenced. Terminal attempt never returns to SEALED. Forced deletion is an explicit destructive exception, not a successful preservation state.
 
-12. **Commands across lifecycle cuts.** Freeze pending T drops in A with provenance. Transactional lineage lookup routes SEALED targets to receipt, REDEEMED to current descendant queue if carried, ledger covered if folded or retired if reduced, RELEASED to P. Dedup (command_id,target); races join transferred queue or see new owner, never copy-delivery gaps. Protection and queued-until-aged rules persist. Already folded targets get covered, not fake successful reduction. Partial and covered depend on prerequisite ledger migration.
+12. **Commands across lifecycle cuts.** Freeze T drops in A. Transactional lookup routes SEALED to receipt, REDEEMED to current descendant if carried, covered if folded or retired if reduced, and RELEASED to P. Dedup target; races join transfer or new owner. Provenance and protection persist. Folded is covered, never fake reduction; partial and covered require clause 27.
 
 ### receipt and archive
 
-13. **Archive authority and crash atomicity.** Archive address is sha256(manifest || V || A) under canonical versioned encoding. Source hashes identify material; store no alternate dropped raw bodies. Projection has no clock, host or unrelated row-version input; incomplete or nondeterministic encoding refuses. External staging may be used only with orphan cleanup and atomic durable receipt reachability before send permission; staging is not SEALED.
+13. **Archive authority and crash atomicity.** archive_id is clause 2a's hash of manifest, V and A. Source hashes identify material, but no alternate dropped raw body is stored. Projection excludes clocks, hosts and unrelated versions; incomplete encoding refuses. External staging needs orphan cleanup and atomic receipt reachability before send permission and is never SEALED. Pre-seal crash leaves no half archive or fence; UNKNOWN resolves. Lost commit replies recover the receipt; post-placeholder crash retains SEALED for the edge. Only source-independent, state-independent and authority-independent events commute.
 
-   Pre-seal crashes, including archive writes before commit, leave no half-archive or fence; UNKNOWN resolves. Lost committed responses recover receipt; crash after placeholder before redeem retains SEALED for matching edge.  Only events independent of source, A, fences, commands, edge and send authority commute.
+14. **Positive-discharge retention and deletion.** Never time-sweep SEALED; expose age_seconds and exclude it from last_activity GC. Cancel does not discharge. REDEEMED follows S. Only RELEASED starts 24-hour forensics; blobs need zero references, and REFUSED absence removes no negative proof. Redeem transfers references P→S; nested custody transfers or is self-contained. Unforced SEALED delete refuses; forced delete is logged. Clause 27 owns deletion.
 
-14. **Positive-discharge retention and deletion.** Never time-sweep SEALED; lost confirmation is possibly delivered. Expose sealed_unredeemed{age}, exclude SEALED from last_activity GC; cancel does not discharge. REDEEMED custody lives with S until owner-lineage deletion. Only positive RELEASED starts24-hour forensics; later sweep its reference, delete blob only at zero protecting references across all states. REFUSED archive absence never permits premature negative-protection removal.
+15. **Negative quotas and identity retirement.** Recreation advances incarnation; stale work refuses. Keep current negatives while sealing is possible and retire stale incarnations oldest-first. attempt_quota and negative bounds reject growth; aliases cannot evade them and saturation fences rowlessly. Retire optimization rows only with replay intact, never possible delivery. Gateway allocation retires after terminality, non-replyable aliases, no custody and incarnation or retention boundary. TTL never removes UNKNOWN, MAY_HAVE_REPLIED or nonterminal work. Issued IDs, MID high-water and descendant identities never reuse; retain release proof.
 
-   Redeem atomically transfers every protecting reference and ownership P→S; nested custody transfers hopwise or self-contained. Ancestor deletion cannot remove descendant's sole archive. Unforced SEALED-unredeemed delete refuses; forced destruction is explicit and logged. D5 tables enter deletion and orphan inventories; owner-key deletion follows clause 27.
+16. **Budget evidence and unknowns.** Gateway supplies normal raw system and tool bytes plus geometry; MC estimates all input and resolves reserve. Summary max_tokens is irrelevant. Known empty is valid; absent is unknown; reserve flag conflict refuses. Unknown geometry, reserve, segment, estimator, fixture, byte cap or identity is budget_unknown, never zero. Model mismatch is typed; other mismatch names field and caps retain values. REFUSED concerns one attempt and never enters lineage_protocol_passthrough.
 
-15. **Negative quotas and identity retirement.** Recreation advances incarnation; old operations refuse without old tombstones. Keep current-incarnation negatives while attempts could seal; retire stale-incarnation rows oldest-first. Configured per-session attempt_quota refuses nonterminal growth and negative rows have a configured bound; aliases cannot evade either. Saturation still fences rowlessly. Retire optimization rows only with terminal replay or immutable reconstruction intact, never sweep possibly delivered or SEALED custody.
-
-   Gateway allocation bookkeeping retires only after terminality, every alias non-replyable, no receipt, carry or archive reference, and incarnation advance or applicable retention expiry. No TTL-only removal of UNKNOWN, MAY_HAVE_REPLIED or nonterminal attempts. Preserve issued canonical IDs, MID high-water and descendant identities forever without reuse; retries retain release and revocation proof.
-
-16. **Budget evidence and unknowns.** Gateway supplies normal raw system and tools bytes plus geometry, not token splits or capture guesses. MC estimates the full budget with provenance and resolves output reserve. Summary max_tokens is not normal output reserve. Known-empty segments are valid; absent segments unknown. Conflicting reserve_accounting duplicates refuse evidence mismatch.
-
-   Unknown geometry, model reserve, segments, estimator, fixtures, byte capacity or identity refuses budget_unknown, never zero, omitted cap or success. Model mismatch is budget_model_mismatch; other evidence mismatch names field. Token, byte, deadline, freshness, incarnation and invalid-operation failures are typed; Report original failed-cap numbers or unknown provenance. REFUSED describes attempt, not global fence or authorization for different material. Never enter lineage_protocol_passthrough; following ordinary input requires fresh-fence admission and normal transform.
+16a. **Output reserve resolution.** D5 v1 gets R only from lineage.output_reserve.tokens_by_model[model]. Gateway values, summary max_tokens and prose cannot override it. Calibrated Claude 200,000 defaults R=20,000 with source=config; missing entry, units or provenance gives budget_unknown. window-geometry remains non-D5 only. The none_declared pin soft=167,000, hard=200,000, R=20,000, X=140,000 records fit_soft=147,000, hard_required=160,000 and both true.
 
 17. **Two-variable budget test.** Let X be the real scheduler estimate over system bytes, tools bytes, MC m0 and m1, full projected carry and policy_reserve. Let R be output_reserve_mc.tokens. Both are known estimates with model and estimator provenance; structured reserve_accounting, not derivation prose, controls:
 
@@ -232,45 +267,29 @@ hard_ok = hard_required <= hard_declared
 token_fit = soft_ok AND hard_ok
 ```
 
-   R>soft_bounded refuses insufficient budget, no wrap or zero. Compute hard_ok even if soft fails; clamp fit only, retain original geometry. Name any additional safety margin separately, not a second output reserve.
+   R>soft_bounded refuses without wrap. Record hard_ok even after soft failure; clamp only fit and preserve geometry. Claude none_declared defaults soft 167,000 and hard 200,000; context-1m may equal. Non-D5 may use once_carved. Window 200,000, R 20,000, carved soft 180,000 accepts X 170,000. Above-hard override pins independence. BudgetRecord retains operands, results, caps, provenance and unknowns.
 
-   Claude Code gateway declares none_declared: default soft 167,000 and hard 200,000; context-1m may have equal soft and hard. Existing OpenCode and Pi evidence declares once_carved where applicable without activating D5. Window200,000, reserve20,000, already-carved soft 180,000 accepts X170,000. Default167,000 and200,000 pin once-only accounting, not an impossible fits-soft-but-not-hard example. An above-hard soft override exercises the independent hard predicate and internal clamp. BudgetRecord records every operand, result, cap, unit, source, provenance and unknown plus envelope identity, not an MC envelope cache.
+18. **Policy reserve and drift pin.** Gateway supplies fixtures, never measured tokens. Before seal MC fixes receipt and real random nonce, appends the exact 64-byte marker, recomputes policy_reserve with tokenizer provenance, and seals that token; changes recompute before mint. Formula is ceil(max supported tokenizer[306 B reminder + tokenized placeholder + wrapper at dynamic maxima]×(1+margin)); reminder and suffix count once. Missing fixture or profile is budget_unknown. Drift above 10 percent invalidates; current estimate enters X within tolerance. Pre-R14 512 B-path baseline was 1530 B, SHA-256 632fa5b75a1e691bbbc9556ef6ab0ae87d5681339261ac03d484ac4366f000c3, 443×1.15→510; 510 is not final. Path limit remains 512 B and marker 64 B. Clause 27 imports inputs. Post-seal surprise remains preserved_but_blocked.
 
-18. **Policy reserve and drift pin.** Claude Code authors variable wrapper fields (transcript path, instructions, harness version); gateway supplies observed and derived fixtures, not per-encoding measured constants. MC policy_reserve=ceil(max-over-supported-fixtures mc-tokenizer(model,profile)[currentDate reminder+placeholder+wrapper with declared dynamic-field maxima] ×(1+margin)). Record reminder_tokens separately, included once in reserve. Policy numbers are estimates, never provider measurements. Missing fixtures or unsupported profile refuses budget_unknown pre-seal. Re-encode drift beyond 10 percent fails fixture pin and makes evidence unusable; within tolerance current estimate, not old pin, enters X.
-
-   Tested policy=510 estimated tokens:306 B reminder+LF+998 B derived auto-120 fixed-placeholder anchor with transcript path 512 B; input SHA-256 632fa5b75a1e691bbbc9556ef6ab0ae87d5681339261ac03d484ac4366f000c3; estimate 443 ×1.15 rounded up=510. Census 9,910 observations,13 unique paths, max116 B, calibration max291 B supports512 B coverage, not a universal bound; margin and limits are policy. Declare limits for every dynamic field. Evidence: docs/evidence/d5-tail-preservation/policy-reserve-calc-v3.md and docs/evidence/d5-tail-preservation/policy-reserve-inputs-v3/. Unexpected post-seal capacity remains preserved-but-blocked.
-
-19. **Independent byte caps and full specimen sizing.** Independently gate encoded archive, manifest, A, carry frame and native-envelope overhead against configured bytes. Gateway ingress64 MiB; smaller applicable gateway and MC transform frame or page bound governs. Archive limit is explicit config, not substance policy. Estimate full specimen union including untagged tools, reasoning, system, m0, m1 and policy reserve;83 tags and24,073 stored tokens are fragment mass, not total carry or exact billed loss. Soft refusal below physical hard is a safety-liveness choice. Gate actual outgoing tokens and bytes on every successor render.
+19. **Independent byte caps and full specimen sizing.** Gate archive, manifest, A, carry frame and envelope bytes independently. Gateway ingress is 64 MiB; the smaller gateway or MC frame bound wins, and archive has explicit config. Size the full specimen union including untagged tools, reasoning, system, m0, m1 and policy reserve; 83 tags and 24,073 stored tokens are only fragment mass. Soft refusal below hard is policy. Every render rechecks actual tokens and bytes.
 
 ### successor semantics
 
-20. **Every-pass carry and digest validation.** Serve carry after m0 and m1 before continuation on first HARD, every DEFER, growth and restart. Only validated folds or legitimate block reductions retire it; partial fold retires its interval, causes normal SOFT and leaves remainder. Include inherited blocks before HARD retention and pruning, not output-only splice. Preserve new suffix independently.
+20. **Every-pass carry and digest validation.** Serve carry after m0 and m1 and before continuation on first HARD, every DEFER, growth and restart. Only validated folds or reductions retire it; partial fold retires its interval, causes SOFT and leaves the rest. Carry participates before HARD retention and pruning; new suffix is independent. Every unreduced member matches frozen served length and clause 2a hash with exact membership. Reduced members match committed unit bytes and current unit plus aggregate projection digests bound to ordered units and A. Tags, versions, hosts and fresh digests alone authorize nothing.
 
-    Unreduced members match frozen served length and sha256 every pass, with missing and duplicate checks. Tags, unrelated versions, hosts and serializers authorize nothing. Reduced members validate committed unit bytes and current projection_digest(unit,row_version), not original hash. Bind ordered unit set to committed A; new digest alone is insufficient.
+21. **Distinct frontiers and proofs.** folded_frontier ends the last real compartment; first_inherited_ordinal starts carry; source_frontier ends preserved source and MAY advance. lineage_anchor and continuation_identity are first live native coordinates. rebase_base is frozen at redeem and solely rebases ordinals. Specimen: folded 1798, carry 1799–1939, base 1939, continuation 1940. Real folds advance coverage_identity, never continuation; no fold is none, not zero. Eligible head is checked folded_frontier+1 or first_inherited_ordinal. Historian selects archive plus new suffix and exposes positive inherited tokens without floor change. Coverage consumers use coverage proof from receipt or real compartment; rebase, marker, reconcile and trim use live-native continuation and base. resolve_boundary_state keeps coverage and declared trim separate; native absence never truncates carry.
 
-21. **Distinct frontiers and proofs.** folded_frontier is last real compartment end, never anchor. first_inherited_ordinal is first carried ordinal; source_frontier is preserved source end and MAY advance with folds. lineage_anchor and continuation_identity.ordinal are first live native coordinate. Frozen rebase_base set at redeem is the only rebase addend, never source_frontier or continuation+1. Specimen: folded 1798, carry 1799–1939, base 1939, continuation 1940. coverage_identity advances with real folds; continuation never moves, even crossing. No real fold means absent, not ordinal 0.
+22. **Anchor absorption and sequence accounting.** Only lineage_boundary is excluded from coverage-range and overlap checks. Coverage end and identity exclude anchor; max_sequence, m0 folded_compartment_seq and m1_compartment_seq include its sequence; partition_by_folded_seq excludes it by type; rendered_m1_coverage advances only on real new compartments. Repeats render no empty anchor. Partial 1799–1905 leaves anchor 1940 and remainder. Crossing 1799–1950 atomically removes it while preserving continuation_identity and native anchor MID on the published compartment; coverage advances while continuation and base remain. Snapshot, generation and append order agree.
 
-   Eligible head is checked folded_frontier+1 or, without real fold, first_inherited_ordinal. No fabricated zero or D5 continued_ordinal_offset_missing. Historian selects archive messages plus new native suffix, not native-only after lowering MAX(end); first trigger has positive inherited eligible tokens without floor changes. Coverage, m0, m1, historian and expansion use real coverage identity and frontier; rebase, host marker, reconcile and trim use continuation and base. Coverage proof is receipt or real compartment; continuation proof is live native. resolve_boundary_state separates declared trim from coverage. No mixed ordinal and MID or native-absence truncation of carry.
+23. **Expansion and nested descent.** Inherited ctx_expand precedes same-key cache and raw fallback, returning V then current permitted reductions, never dropped originals. Range mode resolves carry before cutoff and merges ordered archive and ordinary ranges with existing bounds and identity dedup; restart uses custody. Tags, caches and paths are not resolution. Nested prepare reads S archive because gateway native source excludes carry, unions new uncovered tail, budgets it and enforces hop cap 5 with middle-hop collapse. Dedup origin receipt plus block identity, not content. Re-project current S A and re-mint hashes; self-contained data or references survive ancestor deletion.
 
-22. **Anchor absorption and sequence accounting.** Exclude only lineage_boundary from covering-range validation and publication overlap. Coverage end and identity exclude anchor; max_sequence, m0 folded_compartment_seq and m1_compartment_seq include its sequence. partition_by_folded_seq excludes anchor by type regardless of sequence. rendered_m1_coverage uses only real new compartments; empty set advances nothing. Repeated passes render no empty anchor in m1 and retain stable watermarks.
-
-   Partial 1799–1905 leaves anchor 1940 and remainder. Crossing 1799–1950 atomically removes anchor while preserving continuation_identity and native anchor MID on real published compartment; coverage advances, continuation and base stay fixed. Assembly snapshot, publication generation and append order agree. Repeated and nested folds preserve metadata without phantom coverage or duplicate anchors.
-
-23. **Expansion and nested descent.** Inherited ctx_expand arm precedes same-key cache and raw transcript fallback, returning archive V initially and current permitted projection after reduction, never dropped originals. Range mode resolves carry before last_compacted cutoff, merging ordered archive and ordinary ranges with existing bounds and dedup. Folds preserve appropriate covered expansion across restart. Tags, ancestor caches and transcript paths are not archive resolution.
-
-   Nested prepare reads S's outstanding archive because native source excludes injected carry. Union with genuinely new uncovered native tail is fully budgeted and bounded by hop cap 5 with middle-hop collapse. Dedup origin receipt+block identity, not content; equal bytes at different origins survive. Re-project current S A and re-mint frozen hashes. Self-contained data or protecting references preserve provenance across collapse and ancestor deletion for S2 expansion.
-
-24. **Post-seal overflow preserves custody without a fit promise.** Gate every actual S outgoing body despite prepare fit. Overflow returns typed SuccessorOverflow and gateway 503 preserving appended input for harness retry, never transformed replay. actual is outgoing-body MC estimate labelled mc_estimate, or real count for that request labelled provider. No overflow send, raw-forward, carry discard, REDEEMED undo, remint or degradation.
-
-   Atomically persist overflow_refusals, last_diagnosis, last_overflow and preserved_but_blocked; expose d5 blocked flag and count. Bound retries with overflow_probe attempts and next_probe_at. Same pass arms emergency historian over eligible outstanding carry; empty carry or system+tools alone over hard names diagnosis and does not arm. Existing minimum chunk and producer limits remain; below-minimum or unavailable producer retains named blocked diagnosis.
-
-   Durable armed→assembled→published uses ordinary asynchronous historian, unchanged epoch and assembly-generation guards and entitled anchor absorption; remainder stays eligible. All post-redeem state survives restart. Missing producer stays armed or unavailable, still refuses. No next-fit promise, even after publication: repeated overflow remains diagnosed, bounded preserved_but_blocked, not an automatic stuck defect.
+24. **Post-seal overflow preserves custody without a fit promise.** Recheck every S body. Overflow returns SuccessorOverflow and gateway 503 preserving appended input; actual is labelled mc_estimate unless a request provider count exists. Never send overflow, raw-forward, discard carry, undo REDEEMED, remint or degrade. Atomically persist overflow_refusals, diagnosis, last_overflow, blocked state and bounded overflow_probe. The same pass arms relief over eligible carry; empty carry, system and tools over hard, below-minimum or unavailable producer records a no-arm diagnosis. Durable armed→assembled→published uses ordinary historian with epoch, generation and absorption guards; restart preserves it and remainder stays eligible. Missing producer still refuses. Publication promises no next fit.
 
 ### consumer rebind
 
-25. **D5 isolation and accessor fence.** Shared changes require D5 receipt or lineage_boundary. OpenCode and Pi gain no D5 protocol; descent remains lineage_switched and not-subagent gated, not serializer equality alone. Existing max_compartment_end_ordinal and last_compacted_ordinal COALESCE(MAX(end_message),0) accessor and other callers stay unchanged. For non-D5 real ordinal 0 folds retain continued_ordinal_offset_missing, prior_boundary_ordinal and migration_floor_active.
+25. **D5 isolation and accessor fence.** Shared changes require D5 receipt or lineage_boundary; OpenCode and Pi gain no protocol. Existing COALESCE(MAX(end_message),0) and unlisted callers remain byte-identical for non-D5 ordinal 0, sparse and empty rows, same-key expansion, markers and floors. The D5 Option sibling excludes anchor at exactly five sites: historian mc-module/src/lib.rs:5198–5260; ctx_expand mc-module/src/lib.rs:11952–11999; coverage_ordinal_from_compartments at mc-module/src/transform.rs:7296–7308 and 4150–4151; m0 mc-module/src/m0_compose.rs:434–449. These are four consumers because coverage owns two sites. Missing or adding a site fails the closed-set pin; no global guard changes.
 
-   New D5 Option sibling excludes anchor and rebinds exactly four callers under D5 state: historian trigger, ctx_expand range cutoff, coverage_ordinal_from_compartments and m0 compose. Preserve no-D5 sparse ordinals, filtered-noise empties, same-key raw expansion, native markers and floors. OpencodeAiSdk and Pi goldens stay byte-identical, never regenerated. No global contiguity tightening, empty-row exclusion or guard bypass. Pin reachable D5 and no-D5 controls for every shared change.
+25a. **Receipt-absent descent.** lineage.d5.require_receipt_for_descent defaults false; D5 placeholder activation sets true. For nonempty uncovered tail without matching SEALED, false keeps legacy descent and atomically writes open mc_d5_uncovered_descent{owner_key,lineage_id,first,last,observed_at}, without a preservation claim. fake_compaction_descends_materializes_and_write_free_replay_acks keeps ranges (1,3),(4,6),(11,11), coverage 11 and reports 7–10. True returns d5_receipt_required without changing P, S, anchor, fence or commands. Open rows clear only after a redeemed receipt or real fold proves the full range, or owner deletion. I12 always supplies the receipt.
 
 26. **Single consumer inventory.** Paths beginning mc-store or mc-module are under crates/. Re-cite every row at dispatch baseline, including unnumbered sites; each needs D5 and applicable non-D5 pins. Gateway marker receiving site is unavailable; TS sites do not establish gateway target implementation.
 
@@ -304,252 +323,121 @@ token_fit = soft_ok AND hard_ok
 | `mc-module/src/transform.rs:37308–37329,37371–37441` | Nonempty fixed-placeholder tail replaces accepted gap (I12). |
 | `mc-module/src/transform.rs:4922–4939` and `mc-store/src/lib.rs:11070–11076` | Pre-prune carry and current reduction permissions (20). |
 | `mc-store/src/lib.rs:7444–7490` | D5 tables omit session_id; explicit owner deletion preserves descendant references. |
+| `mc-store/src/lib.rs:7697–7829` | load_session_status_snapshot reads owner-scoped HealthD5 in its one read transaction; no-row parity. |
+| `mc-module/src/transform.rs:2540–2589` | rebase_descent_ordinals uses frozen rebase_base, never continuation or source frontier. |
 
-27. **Owner facts and prerequisite partition.** Owner facts: mc_reduce_command_ledger partial and covered dispositions need an mc-store migration; #2732 is not implemented or banked. Dispatch this D5 prerequisite first; verify migration and ledger row shape before command-custody dependents. Existing lineage descent hop cap 5 with middle-hop merge-collapse was verified live 2026-08-07, drive Leg 5. Reflecting delete_session enumerates PRAGMA table_info and deletes by session_id on every table having it: D5 receipt, archive, manifest and related custody tables instead have owner_key and no session_id; explicit D5 owner deletion governs, not reflection exemptions.
+26a. **Status surface.** session.status always adds read-only d5:HealthD5 scoped by mapped owner_key, current incarnation and lineage. Lists sort; counters distinguish responses, attempts and tombstones. blocked is direct at session.status.d5.blocked. One load_session_status_snapshot read composes it. No rows yields empty lists, all counters zero, last_unrecognized_token_prefix none, blocked false and state ok. Status, doctor and dashboard only relay it; uncovered_descent lists open incidents.
 
-   Disjoint slices in order:1 mc-store receipt, archive, manifest and ledger schemas; ticket, resolve, seal, redeem, release, fences, CAS, delete — one fence-bearing coordinated ck-mc bounce.2 mc-module lifecycle, wire, budget, policy reserve, gateway types.3 module carry, digests, identities, absorption, overlap, accessor, rebind, nested descent.4 module historian, ctx_expand, markers, parity and I-items. Sequence transform.rs and store lib.rs churn by rebase, never parallel overlap. Shared-wire agreement is prerequisite.
+27. **Fixtures, store fence and disjoint slices.** Fixture-only slice 0 precedes slices 1–4. It lands crates/mc-store/tests/fixtures/d5-canonical-v1.json; crates/mc-module/tests/fixtures/d5-specimen/source-segment-v1.json, expected-manifest-v1.json, expected-archive-v1.json and fixture-index-v1.json; and crates/mc-tokenizer/tests/fixtures/d5-policy-reserve-v3. Index records size, redaction, provenance and file SHA-256. Required source digests are VACUUM f589668287f41abaeb2a6526ee6d6f9d162e7ed80b1650f1ca5ec0a45984b8c0 and sanitized calibration input 79cc7ac955ed220fcc9b371597fd414e7c47280c4f2038fa47dad9844746a2ad, not ManifestV1. v3-derived-path512.txt is 1530 bytes, SHA-256 632fa5b75a1e691bbbc9556ef6ab0ae87d5681339261ac03d484ac4366f000c3, estimate 443 then 510. Missing input fails; product code never generates expectations.
 
-28. **Defect and verification.** The failed P firing covered1799–1905 and hit revert_epoch before insertion, not Some(203) formatting. Preserve through 1939 without weakening it. Surviving memory14536 has1,091 characters; three tail probes failed on three passes and expansion independently.
+   Migration mc_store_d5_lineage_v1 adds mc_d5_fence, mc_d5_receipt, mc_d5_receipt_alias, mc_d5_archive, mc_d5_archive_ref, mc_d5_manifest, mc_d5_upload, mc_d5_upload_chunk, mc_d5_negative and mc_d5_uncovered_descent, plus mc_reduce_command_ledger partial and covered; #2732 is not banked. D5 state lives only there, never legacy JSON. Tables use owner_key and no session_id except shared blobs; explicit deletion uses 2b. The launch gate makes older ck-mc refuse D5 sessions with typed d5_downgrade_refused and serve non-D5 unchanged, before transform or admission, preserving D5 bytes across old cache-state rewrite. Ungated downgrade is unsupported.
 
-   Implement acceptance with real two-connection transactions, visible arrays, restart and compile gates. Explain replacing anchor-only gap acceptance with nonempty fixed-placeholder preservation. Silent-loss proof: passing test; stage live files and empty diff; temporary NON-VACUITY BREAK and nonempty diff stat; named gate; restore staged state, touch, empty diff stat. Never commit mutant; name expected and other failures. Mutate actual evaluator, not proxy. Direct hard_ok and hard_required plus admission prevent soft rejection masking hard removal. Undefended controls require a reddened same-file or target control and resolved missing defense. Documentation performs no product changes, tests, deploy or spec firing.
+   Store fence is mc_d5_fence plus receipt CAS and generations. Store-first slices: 1 owns all mc-store migration, CE1, uploads, lifecycle ops, receipt-absent write, status read, accessor, absorption, overlap, CAS and deletion; 2 owns mc-module route, lifecycle, wire, authority, budget, status JSON and gateway types; 3 owns module carry, digests, identities, rebind and nested descent; 4 owns historian, ctx_expand, markers, parity, assigned tests and specimen drills. Hop cap 5 and middle-hop collapse remain. Regions and tests appear once; transform.rs is sequential. Slice 1 lands only after both campaigns close, when the release owner performs one fence-bearing coordinated ck-mc bounce; slice workers never restart ck-mc.
+
+28. **Defect and verification.** P firing covered 1799–1905 then failed revert_epoch, not Some(203); preserve through 1939. memory14536 cannot satisfy tail probes. Use two connections, visible arrays, restart and compile gates. Silent guards: green; stage; empty diff; add NON-VACUITY BREAK; nonempty diff; run named test; restore and touch; empty diff; never commit mutant. Record all failures, mutate evaluator, and directly assert hard_ok, hard_required and admission. Undefended controls need a reddened same-target control and fix. Documentation changes no product or spec state.
 
 ### transport
 
-29. **Dedicated route and trusted authority.** ck-mc RouteTarget::InternalService{module_id:"magic-context",service_id:"mc.lineage"} uses decision-only on_bind: admit iff req.principal==Some(Principal::Reserved{module_id:"thalamus"}), daemon-stamped spawn-nonce authority. Never trust BindIdentity. Restrict only this route; ManagementSurface session.status, wrapup, delete, doctor and dashboard callers unchanged. No MCP tool exposure, generic wire change or protocol pin bump.
+29. **Dedicated route and trusted authority.** ck-mc InternalService{module_id:"magic-context",service_id:"mc.lineage"} on_bind admits only daemon-stamped Principal::Reserved{module_id:"thalamus"}; BindIdentity is untrusted. Restrict only this route; ManagementSurface callers remain open. No MCP exposure, generic wire or pin bump. Unary Vec<u8> bodies are JSON, never FLAG_BINARY, at most 64 MiB; requests do not stream. Typed outcomes remain whole; ErrorBody is only transport or authority.
 
-   Unary Vec<u8> JSON-body frames use JSON framing, not FLAG_BINARY. Body cap 64 MiB; request streaming unavailable (responses only). Preserve full typed SEALED, REFUSED, REDEEMED and RELEASED payloads; ErrorBody{code,message} is solely transport or authority failure, never lifecycle flattening.
-
-30. **Chunked prepare and upload custody.** Gateway MUST use inline prepare when its serialized inline body is at most 1 MiB, ref otherwise; selection applies only to prepare. raw_chunk_bytes≤1 MiB means unencoded put bytes; serialized_body_bytes≤64 MiB means JSON frame. A1 MiB raw chunk is about 1.33 MiB base64 JSON and valid; do not apply inline threshold to put. Digest is SHA-256 over ordered raw bytes. Only kind source_segment is accepted: gateway owns native-by-provenance source; MC generates and returns manifest, never accepts its upload.
-
-   begin idempotency key (AttemptKey,ticket,kind,digest) returns same upload_id after lost reply; differing totals refuse upload_declaration_conflict without rewriting declaration. Identical (upload_id,seq) bytes replay; differing bytes refuse chunk_conflict. finish verifies ordered complete bytes, declaration and digest, replaying same UploadRef. upload_digest_mismatch discards only unreferenced staging; wrong finish on SEALED or REDEEMED referenced upload and foreign mismatch never delete custody.
-
-   Ticket invalidation makes upload unusable immediately, including finish and reference. Unfinished uploads expire with attempt terminality or incarnation advance, never clock alone. Referenced bytes are custody, not GC staging. MC config: lineage.upload.max_concurrent_per_attempt=2; lineage.upload.max_bytes_per_attempt=48 MiB raw; lineage.upload.max_chunk_bytes=1 MiB raw. Aggregate every upload and retry, counting accepted (upload_id,seq) once. Work consumes original D; quota or known expiry refuses before seal without invalidating late committed custody.
+30. **Chunked prepare and upload custody.** Gateway MUST use inline prepare at serialized body≤1 MiB and ref above it; only prepare uses this threshold. raw_chunk_bytes≤1 MiB and serialized_body_bytes≤64 MiB are distinct, so about 1.33 MiB base64 JSON is valid. Upload accepts only source_segment; digest is raw ordered SHA-256 and MC generates manifest. begin key (AttemptKey,ticket,kind,digest) replays upload_id; changed totals refuse without rewrite. Same seq and bytes replay; changed bytes conflict. finish verifies declaration and replays UploadRef. Digest mismatch discards only unreferenced staging; referenced or foreign custody survives. Invalid ticket blocks finish and reference. Unfinished uploads expire only at attempt terminality or incarnation advance. Config: max_concurrent_per_attempt=2, max_bytes_per_attempt=48 MiB raw, max_chunk_bytes=1 MiB raw; retry aggregate counts each accepted seq once. Quota refuses. D expires no staging or seal.
 
 ### gateway target semantics
 
-31. **Durable attempt, ingress and reply gate.** Before ticket sampling, persist attempt ID, F, P, agent, lineage, incarnation, ingress ownership and positional allocation or durable reference; failure prevents dispatch and placeholder. Local CAS binds exactly one chosen sample before prepare, never rebinds. receipt_id stays none until response or resolution; MAY_HAVE_REPLIED starts false. Before any placeholder byte, persist the monotonic bit and acquire send right serialized with revocation across all aliases and retries, including cached SEALED. Bit-to-bytes crash means possible delivery, irrespective of socket failure.
+31. **Durable attempt, ingress and reply gate.** Before sampling, persist identity, F, P, agent, lineage, incarnation, ingress and positional allocation; failure prevents dispatch. CAS binds one ticket before prepare. receipt_id starts none and MAY_HAVE_REPLIED false. Before bytes, persist MAY and acquire authority; emit clause 10 marker once. Crash without bound ticket means no prepare and restart fence read; bound means possibly dispatched and resolves without re-prepare. Recovery uses records, not transcript. Durable session-agent ingress drains lower work. Higher work uses max_pending_per_session_agent=1 and max_wait_seconds=120; excess 503 preserves input. D is not cardinality. SEALED blocks P, REDEEMED routes S and RELEASED needs fresh admission. No raw or transformed replay.
 
-   No bound ticket at crash means no remote prepare or custody even if attempt record exists; restart fence read precedes fresh attempt. Bound ticket is may-have-dispatched marker even before network dispatch: resolve original attempt, never re-prepare or infer never-sent from missing completion. Recovery uses record and current fence, not transcript F. Missing local row uses resolve(attempt_id none) before admission, never treats absence as refusal.
+32. **Release trigger and irreversible send revocation.** Release requires cancellation or expired reply deadline, every alias closed with no retry in flight, and every MAY_HAVE_REPLIED false; otherwise resolve, redeem or hold. Send authority atomically revokes sends and registration via RELEASE_INTENT→NEVER_SEND before release. NeverSendProof binds receipt, incarnation, aliases, retries and revocation ID; no later registration or bit flip is valid, and cached SEALED rechecks. Crash leaves SEALED and retries the same release_attempt_id. Reply, registration, redeem and release serialize to one winner; sockets prove no non-delivery.
 
-   Durable exclusive per-session and agent ownership sets boot and watermark. Lower or equal requests and MC mutations drain or abort before prepare; abort fails. Higher requests queue at most D or get 503 preserving appended input. In-memory cohorts are not fence. SEALED blocks P, REDEEMED routes current S, RELEASED requires fresh admission. No lost input, raw forwarding, P replay of V or transformed-body replay. Placeholder requires matching SEALED and send right; recover from receipt and archive, not discarded source.
+33. **Retained normal envelope lifecycle.** Keep one whole envelope per session-agent-lineage-incarnation: latest managed normal committed send including forwarded retry, excluding summary, rejected and unmanaged. Replace all fields atomically. MC retains receipt evidence, not mutable cache; absence, failure and degradation are unknown.
 
-32. **Release trigger and irreversible send revocation.** Release trigger requires caller cancellation or expired reply deadline, every receipt alias closed with no retry in flight, and all MAY_HAVE_REPLIED false. Otherwise resolve, redeem or hold. Same durable authority as send, registration, retries and bit flips atomically revokes sends and registration via RELEASE_INTENT→NEVER_SEND before remote release. NeverSendProof binds receipt, incarnation, all aliases and retries and revocation ID. No registration or bit flip after revocation; cached SEALED rechecks before send right.
+   Constraint one — order: select committed send, not completion. Higher ingress replaces within boot; durable causality orders boots. Identity must match; late completion cannot overwrite and newer unusable tombstones old.
 
-   Crash after revocation leaves SEALED and retryable release with same release_attempt_id, never send permission. Release versus reply, registration or redeem has one serialized winner; socket failure cannot prove never-replied.
+   Constraint two — persistence: commit pending{sequence}, envelope, clear, then send. Leftover marker is newer_unusable. Failed commit prevents send; persisted evidence may be unsent. Non-persisting restart is budget_unknown. BootId alone does not invalidate. Never mix records or use traces.
 
-33. **Retained normal envelope lifecycle.** One whole normal envelope slot per session and agent, scoped to lineage and incarnation: latest managed normal committed send, including forwarded harness retry, excluding summary, rejected and unmanaged. Atomically replace segments and identities, including model, tools and system changes. Pass by value; MC retains receipt identity and estimates, not mutable envelope cache. First absence, write failure and degraded restart are unknown.
+   Constraint three — identity: compare geometry, profile, guidance, tool and system hashes with intended normal successor, never summary surfaces. Model mismatch is budget_model_mismatch; another field is budget_evidence_mismatch. Age is causal distance, not TTL. Undecidable gives budget_unknown; outgoing checks remain.
 
-   Constraint one — order: select at committed send, not completion. Within boot only newer ingress sequence replaces; across boots durable causal order, not lexical BootId. Match session, agent, lineage and incarnation; late older completion cannot overwrite. Newer unusable sequence tombstones old slot.
+   Constraint four — witness: MC incarnation detects older gateway restore. Foreign or inconsistent incarnation does not match. Equal-incarnation or joint rollback is not universally detectable; intended identity remains the bounded evidence and uncertainty refuses.
 
-   Constraint two — persistence: durably write pending{sequence}, persist whole envelope, clear marker, then send. Crash before clearing marker recovers newer_unusable{sequence}, distinct from valid old record on ordinary restart without marker. Any write or clear failure prevents send and surfaces error. Persist-before-send crash describes possibly unsent request. Explicit non-persisting degradation yields budget_unknown after restart. BootId change alone does not invalidate durable matching-incarnation evidence. Traces cannot replace missing or unusable evidence. Never mix old tools with new model or geometry.
+   Constraint five — refusal: unusable evidence gives budget_unknown before seal and no fallback. AUTO resumes ordinary old history; manual errors. UNKNOWN resolves under current fence. Prepare fit covers only retained evidence; clause 24 handles actual overflow.
 
-   Constraint three — identity: compare header geometry, profile, guidance, tool and system hashes with MC intended normal successor, not summary tools, omissions or max_tokens. Model mismatch returns budget_model_mismatch; others name budget_evidence_mismatch field. Record fresh or aged by causal sequence distance, not TTL or proof. Undecidable is budget_unknown; actual outgoing gate remains.
-
-   Constraint four — witness: independent MC store.db incarnation detects older gateway restore as absent-by-rollback; foreign or inconsistent incarnation is not match. Equal incarnation cannot detect within-incarnation rollback; joint restore rolls witness back too. There identity agreement is remaining evidence; undecidable freshness yields UNKNOWN or refusal, not universal rollback assurance.
-
-   Constraint five — refusal: unusable evidence gives budget_unknown pre-seal, no placeholder or summary fallback. Compaction failed: AUTO resumes old-history ordinary input, manual errors. UNKNOWN resolves under current fence. Prepare proves retained-envelope fit only; post-seal overflow follows clause 24.
-
-34. **Prepare deadline and valid late seals.** D=120 seconds fixed server policy independent of fill bounds gateway prepare wait before 503, not receipt life. Drain, projection, encoding, upload, archive and optional grace≤20 seconds consume original D. Known pre-seal expiry refuses; commit-boundary timeout is UNKNOWN. Never reset or extend D. D+epsilon seal is valid: resolve SEALED, no refresh or second prepare. Still-open request delivers placeholder, observes native successor, then redeems; after 503 or client gone use release trigger with alias proof or hold. D never removes fences, deletes SEALED, proves absence refused or bypasses admission.
+34. **Prepare wait and valid late seals.** D=120 seconds bounds gateway prepare wait before compaction 503; it is not queue depth, MC deadline, receipt life or staging expiry. MC gets no D deadline and MUST NOT expire work for elapsed D; gateway never resets it. D+epsilon commit is SEALED and resolves without refresh or re-prepare. If request remains open, send verified placeholder, observe native successor, then redeem; otherwise hold or release with proof. D never removes custody, proves absence or bypasses admission.
 
 
 ## acceptance sketch
 
-I1: Matching SEALED and F, absent receipt, REFUSED, mismatched F → placeholder only with matching receipt and durable send right; invalid redeem refuses.
+The identity table syntax is `I-id: test | target | slice | owner — observable`. Owners are mc, e2e-specimen, or gateway-not-shipped. An mc or e2e row is part of that slice's definition of done; a gateway row is delivered only by the gateway campaign. Simulator coverage never counts as gateway product coverage.
 
-I2: Served and never-served tail, applied reductions, untagged tools, duplicate equal-content positions → real coverage or V on first S; defer bytes for fresh blocks, no dropped bodies, distinct ordered MIDs.
+I1: d5_placeholder_requires_matching_sealed_receipt | gateway campaign | s2 | gateway-not-shipped — only matching SEALED, F, token and send right emit; invalid redeem refuses.
+I2: d5_carry_requires_exact_ordered_membership | crates/mc-module/src/transform.rs | s3 | mc — served and never-served blocks, reductions, tools and equal bytes retain coverage or ordered V and distinct MIDs.
+I3: d5_inherited_expand_never_resurrects_reduced_body | crates/mc-module/src/lib.rs | s4 | mc — mixed expansion before and after reduction and restart uses current archive projection before cache.
+I4: d5_i04_atomic_seal_publisher_race | crates/mc-store/src/lib.rs | s1 | mc — publisher-before-seal recomputes or refuses; publisher-after-seal fails epoch before append.
+I5: d5_coalesced_allocation_mismatch_refuses | crates/mc-store/src/lib.rs | s1 | mc — same F aliases one receipt and allocation; different F loses; post-release uses a new attempt.
+I6: d5_i06_crash_atomic_receipt_and_successor | crates/mc-store/src/lib.rs | s1 | mc — every archive, seal, redeem and release cut is atomic; missing redeemed S is lineage_corrupt.
+I7: d5_no_real_compartment_carry_is_eligible | crates/mc-module/src/lib.rs | s4 | mc — folded 1798, carry 1799–1939, anchor 1940, no fold and real ordinal 0 choose the right eligible head.
+I8: d5_unreduced_carry_rejects_mutated_bytes | crates/mc-module/src/transform.rs | s3 | mc — HARD, repeated DEFER, partial fold, reduction and restart validate frozen or committed-unit bytes.
+I9: d5_i09_ingress_bounds_preserve_input | gateway campaign | gw | gateway-not-shipped — watermark drains low work and separately bounded pending count and wait return 503 without loss.
+I10: d5_sealed_and_shared_archives_survive_sweep | crates/mc-store/src/lib.rs | s1 | mc — aged SEALED and cancel retain; RELEASED starts 24 hours; last reference controls blobs.
+I11: d5_output_reserve_none_declared_uses_config_once | crates/mc-module/src/lineage.rs | s2 | mc — full union records R=20,000, independent soft and hard, bytes and unknowns without zero-fill.
+I12: d5_specimen_tail_content_on_successor_passes | crates/mc-module/src/transform.rs | s4 | e2e-specimen — receipt-present ten-message fixture preserves nonempty 7–10 content, expansion, eligibility and repeats.
+I13: d5_resolve_before_seal_prevents_commit | crates/mc-store/src/lib.rs | s1 | mc — real two-connection interleavings produce one seal or one durable negative fence.
+I14: d5_nested_descent_carries_outstanding_union | crates/mc-module/src/transform.rs | s3 | mc — P→S→S2 applies current A, preserves distinct origins, survives deletion and obeys hop cap 5.
+I15: d5_all_coverage_consumers_use_real_folded_frontier | crates/mc-module/src/transform.rs | s3 | mc — every inventory site separates real 1798 coverage, native 1940, receipt proof, crossing absorption and parity.
+I16: d5_refused_attempt_does_not_admit_fenced_p | crates/mc-store/src/lib.rs | s1 | mc — A refusal and B seal resolve attempt outcome separately from current P fence and generations.
+I17: d5_admission_consumes_current_fence_generation | crates/mc-store/src/lib.rs | s1 | mc — a none snapshot cannot admit after a concurrent seal.
+I18: d5_release_revokes_cached_reply_permission | gateway campaign | gw | gateway-not-shipped — cached SEALED, registration and delivery-bit races have one send-authority winner.
+I19: d5_release_restores_pending_and_postseal_commands | crates/mc-store/src/lib.rs | s1 | mc — commands around release, redeem and nesting reach current owner once after ledger migration.
+I20: d5_release_redeem_have_one_terminal_winner | crates/mc-store/src/lib.rs | s1 | mc — release and redeem race to one terminal CAS and lost replies replay without duplication.
+I21: d5_i21_different_f_winner_orders | crates/mc-store/src/lib.rs | s1 | mc — both winner orders return p_already_sealed diagnostically and preserve losing input.
+I22: d5_resolve_at_cap_rejects_prearrival_old_ticket | crates/mc-store/src/lib.rs | s1 | mc — saturated negatives still fence delayed old prepare and permit a new ID and ticket.
+I23: d5_stale_incarnation_prepare_never_seals | crates/mc-store/src/lib.rs | s1 | mc — delete and recreate rejects stale prepare and resolve without MID reuse.
+I24: d5_delete_ancestors_preserves_descendant_archive | crates/mc-store/src/lib.rs | s1 | mc — SessionId mapping, owner deletion, forced exception and P→S→S2 references preserve descendants.
+I25: d5_i25_quotas_and_identity_retirement | crates/mc-store/src/lib.rs | s1 | mc — attempt and negative bounds fence without unbounded growth; terminal replay and canonical IDs persist.
+I26: d5_envelope_forwarded_retry_is_latest_normal | gateway campaign | gw | gateway-not-shipped — first absence, retry and overlapping sends select latest causal committed normal envelope.
+I27: d5_envelope_newer_unusable_refuses_old_evidence | gateway campaign | gw | gateway-not-shipped — durable evidence survives boot; failed, degraded and old-incarnation evidence refuses.
+I28: d5_i28_envelope_rollback_limits_are_honest | gateway campaign | gw | gateway-not-shipped — identity mismatch or uncertainty refuses without universal same-incarnation rollback claim.
+I29: d5_budget_uses_intended_normal_projection_identity | gateway campaign | gw | gateway-not-shipped — normal model, tool, system, guidance and profile mismatches are typed and field-specific.
+I30: d5_successor_first_pass_rechecks_actual_geometry | crates/mc-module/src/transform.rs | s3 | mc — larger actual successor surface returns overflow and preserves input without send, raw fallback or remint.
+I31: d5_i31_calibrated_503_and_late_resolve | crates/mc-module/tests/d5_specimen.rs | s4 | e2e-specimen — AUTO and manual calibration preserve old history; UNKNOWN resolves with no summary fallback.
+I32: d5_carry_requires_exact_ordered_membership | crates/mc-module/src/transform.rs | s3 | mc — omissions, duplicates, forged versions, invented units and host serialization reject.
+I33: d5_crossing_fold_keeps_original_continuation_identity | crates/mc-module/src/transform.rs | s3 | mc — partial, crossing, repeated and nested folds freeze continuation and rebase base under generation guards.
+I34: d5_budget_sizes_full_projected_specimen_union | crates/mc-module/tests/d5_specimen.rs | s4 | e2e-specimen — 141-message fixture sizes full carry, not 24,073 tagged tokens.
+I35: d5_non_d5_filtered_noise_coverage_unchanged | crates/mc-module/src/transform.rs | s4 | mc — OpenCode and Pi sparse, empty, same-key and ordinal-zero goldens remain byte-identical.
+I36: d5_budget_unknown_is_not_zero | crates/mc-module/src/lineage.rs | s2 | mc — known empty succeeds while missing segments, R, fixtures, flags or estimator refuse with provenance.
+I37: d5_generation_refusal_replay_is_identical_without_rebump | crates/mc-store/src/lib.rs | s1 | mc — rowless A proof stays fixed as B advances; response, attempt and tombstone counters remain distinct.
+I38: d5_overflow_relief_state_is_durable | crates/mc-module/src/transform.rs | s4 | mc — eligible, empty, below-minimum and over-hard variants persist diagnoses, bounded probes and guarded relief.
+I39: d5_policy_reserve_current_estimate_enters_x | crates/mc-module/src/lineage.rs | s2 | mc — tokenized suffix, missing fixture and drift pins recompute current policy reserve with provenance.
+I40: d5_fixed_placeholder_descends | crates/mc-module/src/transform.rs | s4 | mc — marker shape remains reachable while old real-summary and noncompaction dispositions keep meaning.
+I41: d5_restart_resolve_read_is_non_mutating | crates/mc-store/src/lib.rs | s1 | mc — all-none restart writes nothing; ticket sample is stateless; only bound closure fences.
+I42: d5_coalesced_attempt_preserves_applied_units | crates/mc-module/src/transform.rs | s3 | mc — concurrent identical source shares F while predecessor identities retain units, tags and positions.
+I43: d5_envelope_pending_marker_crash_tombstones_slot | gateway campaign | gw | gateway-not-shipped — pending, record, clear and send cuts never reuse an older slot or send before persistence.
+I44: d5_non_d5_ordinal_zero_fold_unchanged | crates/mc-module/src/transform.rs | s3 | mc — non-D5 ordinal zero keeps old offset, boundary and floor while D5 Option stays eligible.
+I45: d5_anchor_never_reenters_m1_new_compartments | crates/mc-module/src/m1_compose.rs | s3 | mc — three passes, partial and crossing folds exclude anchor coverage but include sequence watermarks.
+I46: d5_bound_ticket_crash_resolves_without_reprepare | gateway campaign | gw | gateway-not-shipped — unbound crash starts fresh after fence read; bound crash resolves original sample exactly once.
+I47: d5_lineage_route_requires_reserved_thalamus | crates/mc-module/src/lineage.rs | s2 | mc — forged identity and ordinary principal fail while reserved principal succeeds and ManagementSurface stays open.
+I48: d5_lineage_transport_preserves_typed_outcomes | crates/mc-module/src/lineage.rs | s2 | mc — inline and ref, 1 MiB raw chunks, larger base64 frame and lifecycle results retain exact JSON algebra.
+I49: d5_upload_conflicts_preserve_original | crates/mc-store/src/lib.rs | s1 | mc — lost begin, duplicate or conflicting put, finish replay and foreign mismatch preserve declaration and custody.
+I50: d5_upload_attempt_quota_is_aggregate | crates/mc-store/src/lib.rs | s1 | mc — invalid ticket, incarnation, two-upload and 48 MiB bounds count chunks once; referenced bytes survive.
+I51: d5_late_seal_resolves_to_valid_custody | crates/mc-module/src/lineage.rs | s2 | mc — D+epsilon resolves SEALED; open request recognizes then redeems, closed request holds or releases, never re-prepares.
+I52: d5_release_trigger_requires_closed_never_replied_aliases | gateway campaign | gw | gateway-not-shipped — cancellation or deadline releases only closed never-replied aliases with stable identity and one winner.
+I53: d5_receipt_token_recognizes_vendored_successor_anchor | crates/mc-module/tests/d5_specimen.rs | s4 | e2e-specimen — hermetic ex13508 and ex13615 first-user scalar and text-block anchors accept exactly one current UUID36 plus base32_20 marker with durable may-have-replied bit or ack; zero, duplicate, conflict, tool-result, old, non-SEALED and pre-SEND-absent cases preserve SEALED and update HealthD5.
 
-I3: Inherited and mixed expansion before reduction, after reduction and restart → current archive projection before cache or raw fallback; ordinary chunk behavior unchanged.
+Parity pins pair every reachable D5 fixture with non-D5 sparse coverage, filtered noise, decay, native boundary, ordinal-zero fold and same-key expansion; OpenCode and Pi goldens are not regenerated. Nested source omits injected carry and must read S archive.
 
-I4: P publisher commits before versus after seal → fresh projection or refusal before; unchanged epoch rejects before transcript append afterward.
+The specimen independently seeds and verifies these strings in predecessor source, then recursively searches every provider-visible successor string across tools, results, reasoning and system on S pass 1, pass 2, restart, expansion and outstanding S2 carry:
+- Your parsed disk assertions are independently verified: setup intact
+- 9226\t            // A second archived project, never touched by this test's — materialize \t as one literal tab.
+- Take the real follow-up note1274: audit persistence-related test assertions in this repo
 
-I5: Same-F concurrent repeats and retry markers, different-F contenders, release then new attempt → one aliased receipt, stable positional allocation; differing material refuses, new ID only at terminal boundary.
+The native user anchor is vendored from ex13508 and ex13615 and contains the variable Claude wrapper plus `<summary>\nConversation history compacted and preserved by Magic Context. Full context continues to be served automatically.\n</summary> mc-d5:<36-char UUID receipt_id>:<20-char lowercase base32 nonce>`. Wrapper equality, manifest IDs, hashes, tags and predecessor-only archives do not satisfy content or recognition. Saved memory14536 and copied notes are independent controls. After legitimate reduction, require the committed reduced representation and original-body absence.
 
-I6: Every archive, seal, reply, redeem and release crash cut → atomic archive, fence and successor; committed state recovers; missing S behind REDEEMED is lineage_corrupt, not remint.
+Required red-first controls inherit the owner and slice heading below. Each starts from its named passing test and follows clause 28; controls selected in the identity table retain the same assignment. Gateway controls close only in the gateway campaign.
 
-I7: Specimen folded 1798, carry 1799–1939, anchor 1940; no real fold; real ordinal 0 → correct eligible head and positive carry tokens, no floor or offset regression.
-
-I8: HARD, two DEFERs, partial fold, reduction, restart, DEFER → frozen bytes every unreduced pass, fold causes SOFT, reduced block uses committed unit without original resurrection.
-
-I9: Watermark boundaries, outstanding MC mutations, appended queued ordinary input → low cohort drains or aborts, high queues≤D or503; no drop, transformed replay or raw forward.
-
-I10: Aged SEALED, cancel, positive RELEASED clock and shared blob → sealed_unredeemed retained, only release starts24 hours, last protecting reference controls deletion.
-
-I11: Projected union, both reserve sources, unknown fields, soft exceedance, over-hard override, byte exceedance → original geometry, units and provenance; independent soft and hard results and encoded caps; unknown refuses.
-
-I12: Ten-message fixture real history1–6, nonempty instruction and tool result7–10, fixed placeholder instead of Durable summary alpha → content, expansion, eligibility and repeats preserve tail, not anchor 11-only coverage.
-
-I13: Real two-connection seal and resolve paused before transaction, after CAS read and at commit → resolve-first fences future seal; seal-first returns SEALED, no contradictory tombstone or partial fence.
-
-I14: P→S→S2, current S reduction, equal bytes from distinct origins, gateway supplies new native source only → current-A projected union preserves origin identity, remints hashes, survives ancestor deletion and obeys hop cap 5 with middle-hop collapse.
-
-I15: Every consumer, specimen, empty real history, ordinal 0, partial1799–1905, crossing1799–1950, mixed expansion and wire anchors → real 1798 versus native 1940 proof separation, atomic absorption and non-D5 parity.
-
-I16: REFUSED A with SEALED B, coalesced alias and restart missing local row → resolve separates A outcome from current P fence and generation; refusal alone never admits P.
-
-I17: Read none fence then concurrent seal before ordinary admission → held ownership or current generation rejects stale permission; appended input preserved.
-
-I18: Cached SEALED races revocation, retry registration and delivery-bit flip in both orders → one send-authority winner, no send after NEVER_SEND or release with possible delivery.
-
-I19: Commands before, after and racing release, redeem and nested routing after prerequisite partial and covered ledger migration → current owner receives each target once in effect with provenance and ledger intact; release transfers pending and post-seal queues before clearing fence.
-
-I20: Release races redeem, lost-response terminal retries → one CAS winner, existing S returned, no remint, duplicated queues or terminal undo.
-
-I21: Different-F prepares before and after F1 seal, both winner orders → loser p_already_sealed cites winner diagnostically, preserves losing input and winning receipt.
-
-I22: Negative cap full, delayed old handler, resolve bump then arrival and fresh attempt → old seal_after_resolve with no archive or fence, rowless authoritative closure; new ticket and ID succeed.
-
-I23: Delete and recreate after refusal, delayed old prepare and resolve, fresh attempt → stale incarnation refuses independently of tombstones and counters; no issued MID reuse.
-
-I24: P→S→S2 references, delete ancestors, unforced SEALED delete and forced destruction through real reflecting delete_session → descendant expansion survives, owner_key governs, unforced refuses and forced logs exception.
-
-I25: Attempt and negative quotas under refuse, release, retry and MID bookkeeping retirement → refuse before unbounded growth, capped resolve still fences, terminal replay intact, issued and carried MIDs never reused.
-
-I26: First-turn compaction, normal envelope, forwarded harness retry, overlapping sends and older late completion → first unknown refuses; latest causal committed send including retry wins atomically.
-
-I27: Durable envelope ordinary restart, newer write failure, nonpersisting restart and old-incarnation restore → matching durable evidence survives boot; unusable, degraded or old-incarnation evidence refuses budget_unknown.
-
-I28: Within-incarnation and joint database rollback with changed or undecidable intended surface → identity mismatch or unknown refuses; equal incarnation makes no universal rollback claim.
-
-I29: Normal envelope differs from summary tools or max_tokens but matches intended successor; separate model, tools, system, guidance and profile mismatches → normal evidence used with age, typed field-specific mismatch.
-
-I30: Prepare fit followed by larger actual successor tools or guidance → typed successor_overflow, appended input preserved on503, emergency fold when eligible, no send, raw-forward, discard, remint, undo or fit guarantee.
-
-I31: AUTO persistent503 and503-503-200, manual refusal, prepare timeout around commit → calibrated D120, retained history and normal transform on refusal, UNKNOWN resolves, no provider summary or raw passthrough.
-
-I32: Manifest omission, duplicate, forged row_version, invented unit, host-dependent unreduced bytes → reject unauthorized membership or projection, accept genuine committed reduction.
-
-I33: Partial, crossing and repeated folds, nested descent, changed assembly generation → continuation_identity and rebase_base frozen, anchor absorbed only with atomic real publication, stale snapshots cannot append inconsistent ranges, remaining carry eligible.
-
-I34: Full141-message specimen with reductions, untagged tools, reasoning, system, m0, m1 and wrapper → full-union estimate, soft-policy refusal distinct from physical hard, not24,073 tag tokens as total.
-
-I35: No-D5 OpenCode and Pi, sparse retired ordinals, empty filtered-noise rows, same-key expansion → unchanged goldens, coverage, markers and no D5 bypass.
-
-I36: Known-empty system and tools versus absent segments, unknown output reserve, missing policy fixtures, absent structured reserve flag and unresolved estimator → known emptiness accepted; each unknown refuses with provenance, not zero or successful cap.
-
-I37: Full negative cap, A resolve, fresh B resolve, A replay and delayed prepare → identical A proof fenced_by=ticket generation+1, no replay bump or receipt row, independent current snapshot, seal_after_resolve and separate response, attempt and tombstone counts.
-
-I38: Overflow: eligible, empty or below-minimum carry; system+tools over hard; unavailable producer; restart and post-publication overflow → eligible arm and fenced publish, named no-arm diagnoses otherwise, durable blocked counters and bounded probes; every503 retains input, no next-fit or stuck claim.
-
-I39: Supported512 B wrapper fixtures, missing profile or fixture, drift inside or beyond 10 percent →443×1.15 rounds510, reminder separate; current estimate enters X inside tolerance, excess drift fails, unknown support refuses pre-seal.
-
-I40: Fixed-placeholder wrapper, real continuation_summary("alpha"), flag absent with shape and noncompaction shape → D5 descended with valid anchor; old control and NotCompactionShape and ObservedFlagMissingShapePresent retain meaning; TS producer matches.
-
-I41: Restart with no local row, stateless ticket samples and genuine bound-attempt closure → resolve(attempt_id none) writes nothing and grants no admission; sampling writes no issuance or row and bumps nothing; only genuine closure fences an absent attempt.
-
-I42: Concurrent same-source reduced block and duplicate-content positions → same F; native_mid maps predecessor_identity for units and tags; alias tickets and allocations agree, mismatch refuses seal_material_mismatch.
-
-I43: Crashes and failures at pending write, envelope persist, marker clear and send → no send before three commits; leftover marker tombstones old slot, ordinary no-marker restart retains matching evidence.
-
-I44: Non-D5 continued real ordinal 0 fold and present continuation base versus D5 → old offset abort, prior boundary and migration floor unchanged outside D5; D5 Option remains eligible.
-
-I45: Anchor across three passes, partial and crossing fold → coverage excludes anchor, m0 and m1 sequence include it, no empty m1 new anchor or false1940 coverage, stable repeated watermark.
-
-I46: Crash before sample, before local bind, bound before dispatch, after dispatch; concurrent samples → unbound states have no prepare or custody and use restart read before fresh attempt; exactly one bound sample, original resolve without re-prepare.
-
-I47: Forged BindIdentity, non-thalamus and legitimate reserved principal, ManagementSurface callers → daemon principal alone authorizes mc.lineage, old callers unchanged, no MCP or binary exposure.
-
-I48: 1.5 MiB source,1 MiB raw chunk, inline threshold and typed replies → byte-identical chunk roundtrip, ref for oversized prepare, larger base64 put accepted within 64 MiB, typed results outside ErrorBody.
-
-I49: Lost begin reply, put duplicate or conflict, repeat finish, changed begin totals, corrupt SEALED finish and foreign mismatch → stable IDs and refs; typed conflicts preserve declaration and custody.
-
-I50: Ticket invalidation, incarnation change,2-upload and48 MiB quota, duplicate chunk and D expiry → unusable finish and reference, lifecycle-only staging expiry, counted-once aggregate refusal pre-seal; referenced bytes survive GC.
-
-I51: D+epsilon seal with request open versus503 sent or client gone → resolve SEALED, no reset, refresh or second prepare; open delivers and observes native successor before redeem, closed uses never-replied alias proof for release.
-
-I52: Cancelled or expired receipt with closed versus active or possible-reply aliases; release races reply and redeem; lost release reply; release after redeem → only closed never-replied set revokes, stable idempotent retry, one terminal winner, already_redeemed refusal.
-
-Parity pins: reachable D5 receipt and lineage-boundary fixtures paired with no-D5 sparse coverage, filtered noise, decay, native boundary, real ordinal 0 fold and same-key expansion → unchanged OpencodeAiSdk and Pi differential goldens, no D5 bypass; nested source omitting injected carry → S archive actually read.
-
-Specimen content probe: independently seeded and checked unreduced source, fixed-placeholder wrapper, recursive search of every string in full provider-visible arrays (tools, results, reasoning, system), S passes1,2, restart, expansion and outstanding S2 carry → all three probes below present; saved memory14536 in m0 and copied-note controls cannot substitute.
-
-- predecessor ccm-1824#0 → `Your parsed disk assertions are independently verified: setup intact`.
-- predecessor ccm-1864#0 → `9226\t            // A second archived project, never touched by this test's`, with \t materialized as a literal tab, not backslash plus t.
-- predecessor ccm-1927#0 → `Take the real follow-up note1274: audit persistence-related test assertions in this repo`.
-
-Fixed-placeholder specimen → `<summary>\nConversation history compacted and preserved by Magic Context. Full context continues to be served automatically.\n</summary>` inside the native wrapper, not a real tail summary; manifest IDs, tags, hashes or predecessor-only archives do not satisfy successor content presence.
-
-Legitimately reduced probe block → committed reduced representation present, original body absent, no false verbatim-resurrection expectation.
-
-Red-first mutation fixtures → named test below fails under the temporary control.
-
-- Bypass the gateway SEALED and matching-F placeholder permission → `d5_placeholder_requires_matching_sealed_receipt` red.
-- Remove durable attempt creation before ticket sampling → `d5_crash_after_dispatch_recovers_durable_attempt` red.
-- Refresh the ticket when a delayed old prepare reaches MC → `d5_resolve_at_cap_rejects_prearrival_old_ticket` red.
-- Disable the tombstone predicate while leaving ordinary seals reachable → `d5_resolve_before_seal_prevents_commit` red.
-- Admit P from attempt REFUSED without consuming current fence generation → `d5_refused_attempt_does_not_admit_fenced_p` red.
-- Cache a none fence across a concurrent seal without rechecking → `d5_admission_consumes_current_fence_generation` red.
-- Allow a cached SEALED retry to send after NEVER_SEND → `d5_release_revokes_cached_reply_permission` red.
-- Remove release transfer of parked commands → `d5_release_restores_pending_and_postseal_commands` red.
-- Permit both release and redeem updates without the shared receipt CAS → `d5_release_redeem_have_one_terminal_winner` red.
-- Return a newly minted successor on redeem retry → `d5_redeem_retry_returns_existing_successor` red.
-- Accept a redeem retry that declares a different successor_key for a bound edge → `d5_bound_edge_rejects_new_successor_key` red.
-- Replace carry with an empty provider-visible slice while keeping metadata → `d5_specimen_tail_content_on_successor_passes` red.
-- Validate an unreduced block only against a newly claimed mutable digest → `d5_unreduced_carry_rejects_mutated_bytes` red.
-- Accept missing or duplicated members if their individual hashes match → `d5_carry_requires_exact_ordered_membership` red.
-- Compare a legitimate reduced block to its frozen original served hash → `d5_legitimate_reduction_uses_unit_projection` red.
-- Let inherited ctx_expand choose a raw cache entry before current projection → `d5_inherited_expand_never_resurrects_reduced_body` red.
-- Use S's gateway-native segment alone for nested prepare → `d5_nested_descent_carries_outstanding_union` red.
-- Reuse ancestor V instead of applying S's current A at nested seal → `d5_nested_descent_reprojects_current_reduction` red.
-- Deduplicate nested union by content hash → `d5_nested_distinct_origin_equal_bytes_survive` red.
-- Read terminal anchor end as real folded frontier → `d5_all_coverage_consumers_use_real_folded_frontier` red.
-- Treat absent folded frontier as zero and reject continued offsets → `d5_no_real_compartment_carry_is_eligible` red.
-- Route non-D5 ordinal-zero folds through the D5 Option accessor → `d5_non_d5_ordinal_zero_fold_unchanged` red.
-- Exclude the anchor row from the folded sequence watermark → `d5_anchor_never_reenters_m1_new_compartments` red.
-- Rebase live native ordinals from continuation_identity.ordinal plus one → `d5_rebase_base_is_frozen_1939` red.
-- Validate coverage_identity only against native input → `d5_coverage_receipt_proof_and_native_anchor_are_distinct` red.
-- Remove lineage_boundary overlap exemption → `d5_crossing_fold_absorbs_anchor_atomically` red.
-- Move continuation_identity to crossing fold end → `d5_crossing_fold_keeps_original_continuation_identity` red.
-- Key compaction-shape recognition on provider summary text → `d5_fixed_placeholder_descends` red.
-- Delete D5 protecting rows by predecessor session_id after ownership transfer → `d5_delete_ancestors_preserves_descendant_archive` red.
-- Add session_id to a D5 custody table visited by reflecting delete_session → `d5_delete_session_exempts_transferred_protection` red.
-- Sweep SEALED by age or delete a shared blob with a live reference → `d5_sealed_and_shared_archives_survive_sweep` red.
-- Omit incarnation check after delete and recreate → `d5_stale_incarnation_prepare_never_seals` red.
-- Reclaim canonical MID identities with terminal allocation bookkeeping → `d5_mid_retirement_never_reuses_issued_identity` red.
-- Make ticket sampling close the attempt or persist issuance → `d5_ticket_sample_is_stateless` red.
-- Fence live P from resolve(attempt_id none) → `d5_restart_resolve_read_is_non_mutating` red.
-- Skip generation bump for a still-valid ticket at negative-row saturation → `d5_capped_resolve_fences_by_generation` red.
-- Report generation-fenced refusals in the tombstone counter → `d5_refused_by_generation_counted_separately` red.
-- Include gateway MIDs or attempt_id in F → `d5_same_source_concurrent_attempts_share_f` red.
-- Resolve applied units by native_mid instead of predecessor_identity → `d5_coalesced_attempt_preserves_applied_units` red.
-- Subtract output reserve twice for once_carved evidence → `d5_budget_once_carved_170k_fits_180k_soft` red.
-- Neutralize real hard predicate; assert hard diagnostics directly → `d5_budget_overhard_override_reports_independent_hard_failure` red.
-- Replace unknown segment or reserve with zero → `d5_budget_unknown_is_not_zero` red.
-- Size carry from retained tag-token sum instead of full projection → `d5_budget_sizes_full_projected_specimen_union` red.
-- Exclude successfully forwarded harness retries from envelope selection → `d5_envelope_forwarded_retry_is_latest_normal` red.
-- Swap the envelope on completion instead of causal committed-send order → `d5_envelope_older_completion_cannot_overwrite` red.
-- Reuse older envelope after pending-marker crash → `d5_envelope_newer_unusable_refuses_old_evidence` red.
-- Forward a newer normal request before pending, record and clear commits finish → `d5_envelope_unpersistable_request_not_forwarded` red.
-- Compare intended normal identity to raw summary tools → `d5_budget_uses_intended_normal_projection_identity` red.
-- Skip the first successor actual outbound geometry gate → `d5_successor_first_pass_rechecks_actual_geometry` red.
-- Publish the relief fold outside the revert_epoch and generation guards → `d5_relief_fold_respects_publication_guards` red.
-- Drop overflow_refusals or relief state on successor restart → `d5_overflow_relief_state_is_durable` red.
-- Apply D5 anchor exclusions globally to non-D5 empty rows → `d5_non_d5_filtered_noise_coverage_unchanged` red.
-- Route authoritative refusal into raw lineage passthrough → `d5_refusal_never_forwards_raw_overlimit` red.
-- Re-bump or use current generation on replay of an invalidated A ticket → `d5_generation_refusal_replay_is_identical_without_rebump` red.
-- Count replayed A response as a new refused attempt → `d5_generation_response_and_attempt_counts_are_distinct` red.
-- Rebind a chosen ticket or re-prepare bound crash recovery → `d5_bound_ticket_crash_resolves_without_reprepare` red.
-- Accept a different coalesced positional allocation → `d5_coalesced_allocation_mismatch_refuses` red.
-- Forward raw on successor overflow → `d5_successor_overflow_refuses_and_preserves` red.
-- Return overflow without arming eligible nonempty carry → `d5_overflow_arms_fold_when_carry_nonempty` red.
-- Arm despite system+tools alone exceeding hard → `d5_overflow_no_arm_when_system_tools_exceed_hard` red.
-- Supply zero for missing or unsupported policy fixtures → `d5_policy_reserve_unknown_profile_or_fixture_refuses` red.
-- Accept policy fixture drift beyond 10 percent → `d5_policy_reserve_fixture_drift_fails` red.
-- Use pinned old reserve rather than current within-tolerance estimate → `d5_policy_reserve_current_estimate_enters_x` red.
-- Skip pre-write pending marker → `d5_envelope_pending_marker_crash_tombstones_slot` red.
-- Bind mc.lineage from forged BindIdentity or ordinary principal → `d5_lineage_route_requires_reserved_thalamus` red.
-- Restrict existing ManagementSurface together with lineage route → `d5_lineage_authority_keeps_management_route_unchanged` red.
-- Apply 1 MiB inline threshold to base64 put frame → `d5_upload_raw_chunk_and_serialized_frame_limits_are_distinct` red.
-- Flatten typed receipt outcome into ErrorBody → `d5_lineage_transport_preserves_typed_outcomes` red.
-- Allocate new upload on lost begin reply retry → `d5_upload_begin_retry_returns_same_id` red.
-- Overwrite conflicting begin declaration or existing chunk → `d5_upload_conflicts_preserve_original` red.
-- Delete SEALED upload on corrupt finish → `d5_upload_corrupt_finish_preserves_sealed_custody` red.
-- Finish chunks after ticket invalidation → `d5_upload_invalidated_ticket_is_unusable` red.
-- Reset quota per upload instead of aggregate attempt → `d5_upload_attempt_quota_is_aggregate` red.
-- Treat D+epsilon seal as absent and issue second prepare → `d5_late_seal_resolves_to_valid_custody` red.
-- Redeem before observing native transcript replacement → `d5_redeem_waits_for_native_successor` red.
-- Release with active alias or possible reply → `d5_release_trigger_requires_closed_never_replied_aliases` red.
-- Change release_attempt_id after lost response → `d5_release_unknown_retry_keeps_identity` red.
-- Permit release against REDEEMED → `d5_release_after_redeem_returns_already_redeemed` red.
+- s0 fixture: d5_fixture_import_pins_upstream_hashes (change source hash); d5_f_canonical_vector_matches_committed_fixture (change CE1 byte); d5_policy_fixture_is_independent_of_evaluator (derive expected from evaluator).
+- s1 mc: d5_resolve_at_cap_rejects_prearrival_old_ticket (refresh old ticket); d5_resolve_before_seal_prevents_commit (disable tombstone); d5_refused_attempt_does_not_admit_fenced_p (admit from refusal); d5_admission_consumes_current_fence_generation (cache none); d5_release_restores_pending_and_postseal_commands (drop transfer); d5_release_redeem_have_one_terminal_winner (split CAS); d5_redeem_retry_returns_existing_successor (remint); d5_bound_edge_rejects_new_successor_key (accept new S); d5_delete_ancestors_preserves_descendant_archive (delete by predecessor); d5_delete_session_exempts_transferred_protection (reflect D5 tables); d5_sealed_and_shared_archives_survive_sweep (age sweep); d5_stale_incarnation_prepare_never_seals (omit incarnation); d5_mid_retirement_never_reuses_issued_identity (reclaim MID); d5_ticket_sample_is_stateless (persist issuance); d5_restart_resolve_read_is_non_mutating (write on restart); d5_capped_resolve_fences_by_generation (skip bump); d5_refused_by_generation_counted_separately (merge counters); d5_generation_refusal_replay_is_identical_without_rebump (use current generation); d5_generation_response_and_attempt_counts_are_distinct (count replay as attempt); d5_upload_begin_retry_returns_same_id (new retry ID); d5_upload_conflicts_preserve_original (overwrite declaration or chunk); d5_upload_corrupt_finish_preserves_sealed_custody (delete referenced bytes); d5_upload_invalidated_ticket_is_unusable (finish after invalidation); d5_upload_attempt_quota_is_aggregate (reset quota); d5_migration_downgrade_refuses_d5_preserves_non_d5 (serve D5); d5_old_cache_rmw_preserves_d5_fence_rows (touch D5 table); d5_session_id_owner_key_mapping_is_total (normalize key); d5_receipt_absent_strict_refuses_without_mutation (descend in strict); d5_receipt_absent_compat_reports_range (omit incident); d5_coalesced_allocation_mismatch_refuses (accept different allocation).
+- s2 mc: d5_same_source_concurrent_attempts_share_f (hash MID); d5_budget_once_carved_170k_fits_180k_soft (subtract R twice); d5_budget_overhard_override_reports_independent_hard_failure (remove hard predicate); d5_budget_unknown_is_not_zero (zero unknown); d5_output_reserve_none_declared_uses_config_once (wrong R source); d5_policy_reserve_unknown_profile_or_fixture_refuses (zero missing fixture); d5_policy_reserve_fixture_drift_fails (accept drift); d5_policy_reserve_current_estimate_enters_x (reuse old estimate); d5_lineage_route_requires_reserved_thalamus (trust BindIdentity); d5_lineage_authority_keeps_management_route_unchanged (restrict ManagementSurface); d5_upload_raw_chunk_and_serialized_frame_limits_are_distinct (cap encoded put at 1 MiB); d5_lineage_transport_preserves_typed_outcomes (flatten to ErrorBody); d5_rowless_resolve_json_preserves_proof_and_fence (outer refusal); d5_late_seal_resolves_to_valid_custody (expire at D); d5_late_upload_does_not_get_fresh_prepare_deadline (apply MC D timer); d5_status_d5_no_rows_is_explicit (omit d5); d5_status_health_is_owner_scoped (global counters); d5_recognition_suffix_recomputed_before_seal (reuse 510).
+- s3 mc: d5_unreduced_carry_rejects_mutated_bytes (mutable digest); d5_carry_requires_exact_ordered_membership (omit or duplicate member); d5_legitimate_reduction_uses_unit_projection (compare frozen original); d5_nested_descent_carries_outstanding_union (native-only nesting); d5_nested_descent_reprojects_current_reduction (reuse ancestor V); d5_nested_distinct_origin_equal_bytes_survive (content dedup); d5_all_coverage_consumers_use_real_folded_frontier (use anchor or miss either coverage site); d5_no_real_compartment_carry_is_eligible (none as zero); d5_non_d5_ordinal_zero_fold_unchanged (global Option); d5_anchor_never_reenters_m1_new_compartments (exclude watermark); d5_rebase_base_is_frozen_1939 (rebase from continuation); d5_coverage_receipt_proof_and_native_anchor_are_distinct (native-only coverage proof); d5_crossing_fold_absorbs_anchor_atomically (remove overlap exemption); d5_crossing_fold_keeps_original_continuation_identity (move continuation); d5_successor_first_pass_rechecks_actual_geometry (skip first gate); d5_successor_overflow_refuses_and_preserves (raw-forward); d5_overflow_arms_fold_when_carry_nonempty (omit arm); d5_overflow_no_arm_when_system_tools_exceed_hard (arm impossible case); d5_coalesced_attempt_preserves_applied_units (resolve by native MID); d5_refusal_never_forwards_raw_overlimit (passthrough); d5_recognition_token_mismatch_refuses_redeem (accept wrong token); d5_unrecognized_successor_stays_sealed (mint without recognition).
+- s4 mc and e2e-specimen: d5_specimen_tail_content_on_successor_passes (empty served slice); d5_inherited_expand_never_resurrects_reduced_body (raw cache first); d5_fixed_placeholder_descends (recognize provider summary text); d5_receipt_token_recognizes_vendored_successor_anchor (require wrapper equality); d5_budget_sizes_full_projected_specimen_union (size tag sum); d5_non_d5_filtered_noise_coverage_unchanged (global exclusion); d5_relief_fold_respects_publication_guards (publish unfenced); d5_overflow_relief_state_is_durable (drop restart state).
+- gw gateway-not-shipped: d5_placeholder_requires_matching_sealed_receipt (bypass permission); d5_crash_after_dispatch_recovers_durable_attempt (dispatch before record); d5_release_revokes_cached_reply_permission (send after NEVER_SEND); d5_envelope_forwarded_retry_is_latest_normal (exclude retry); d5_envelope_older_completion_cannot_overwrite (swap on completion); d5_envelope_newer_unusable_refuses_old_evidence (reuse old); d5_envelope_unpersistable_request_not_forwarded (send before persistence); d5_envelope_pending_marker_crash_tombstones_slot (skip marker); d5_budget_uses_intended_normal_projection_identity (use summary tools); d5_bound_ticket_crash_resolves_without_reprepare (rebind or reprepare); d5_redeem_waits_for_native_successor (redeem before recognition); d5_release_trigger_requires_closed_never_replied_aliases (release active alias); d5_release_unknown_retry_keeps_identity (change retry ID); d5_release_after_redeem_returns_already_redeemed (release REDEEMED); d5_ingress_queue_bound_is_not_d (treat D as cardinality).
 
 ## non-goals
 
@@ -560,7 +448,7 @@ Red-first mutation fixtures → named test below fails under the temporary contr
 - Detect compaction mid-turn, change substance floors or scheduler fill policy, make the predecessor's in-flight fire the carrier, or relax the existing revert_epoch guard.
 - Restore already reduced source bodies, change ordinary same-key raw chunk expansion semantics, or claim that all predecessor facts vanished despite independently saved memory and notes.
 - Solve arbitrary same-incarnation or joint-database rollback, guarantee every future successor envelope fits a prior estimate, or establish a client maximum timeout from the D120 calibration.
-- Deploy D5 to production or bounce ck-mc as part of any slice; the fence-bearing slice-1 placement is one coordinated bounce agreed with the gateway owner after both campaigns close.
+- Independently deploy D5 or restart ck-mc. Slice 1 lands only after both campaigns close, when the release owner performs one fence-bearing coordinated ck-mc bounce; slice workers never restart ck-mc.
 - Provide any post-seal capacity degradation lane or promise that arming or publishing a fold makes the next request fit.
 
 ## open_questions
