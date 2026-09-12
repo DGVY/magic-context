@@ -201,3 +201,5 @@ The budget-evidence contract (§17.1) needs the most recent NORMAL-turn outbound
 - **Pins:** first-turn compaction refuses budget_unknown; a compaction after a normal turn seals with the envelope id recorded; a tools-set change between the normal turn and the compaction uses the NEWER record (no stale refusal); a gateway restart without persistence refuses with the stated reason; model mismatch refuses.
 
 Design status after §20: AMEND-folded through both seats and Thalamus's corrections; the FINAL review inputs are (1) Thalamus's consumer map (pending) merged into 16.3/18.3's table, (2) the Athena refire on the final text once ALF's harvest fix is live. Spec mint after that; no implementation before.
+
+§19(d) sizing guard (Thalamus pm_b9f13187): the specimen's "83 tags / ~24k stored tokens" is the retained TAGGED-fragment mass only (the defect report limits that number explicitly); the carry estimate for sizing and for the budget test is the estimator over the FULL projected V-tail from the manifest — untagged tool inputs, reasoning blocks, system blocks and the actual projected reductions included — never the tag sum.
