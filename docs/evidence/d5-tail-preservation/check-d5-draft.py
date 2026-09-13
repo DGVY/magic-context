@@ -25,7 +25,7 @@ assert len(b)<=85000
 # R17 (CoverageProofV1 became a real tagged type, +~450 B of shared contract);
 # the pipeline's own intake ceiling is 100,000 total, so this stays a fold-growth
 # guard, not a pipeline limit. Do not raise again for prose; only for types.
-assert len(c.encode())<=51000
+assert len(c.encode())<=52000  # v1.3.12: UnitRecordV1 (typed unit locator/coverage) added for R17.2
 assert len(a.encode())<=22000
 subs={m[1]:m[0] for m in re.finditer(r'(?ms)^### ([^\n]+)\n(.*?)(?=^### |\Z)',c)}
 assert list(subs)==['types','lifecycle ops','receipt and archive','successor semantics','consumer rebind','transport','gateway target semantics']
@@ -41,7 +41,7 @@ assert '.cortexkit/' not in body
 assert not re.search(r'\b[0-9a-f]{7,40}\b',s)
 for bad in ['anchor_reserve','AnchorReserveRecord','current_resolve_generation','admission.acquire','fence.read','serving_encoding','wrapper_sha256','measured_at','ticket_id:', 'MintPending','mint_only','Settled','amended by']:
  assert bad not in s,bad
-for k in ['AdmissionTicket','NegativeProof','ReceiptV1','ManifestV1','SuccessorFrontiers','BudgetRecord','PolicyReserveRecord','PostRedeemRecord','CapacityDiagnosis','EnvelopeRecordV1','EnvelopePending','UploadRef','PrepareSource']:
+for k in ['AdmissionTicket','NegativeProof','ReceiptV1','ManifestV1','CoverageProofV1','UnitRecordV1','SuccessorCandidate','SuccessorFrontiers','BudgetRecord','PolicyReserveRecord','PostRedeemRecord','CapacityDiagnosis','EnvelopeRecordV1','EnvelopePending','UploadRef','PrepareSource']:
  assert len(re.findall(r'(?m)^'+k+r' = ',c))==1,k
 for needle in ['fenced_by=ticket.resolve_generation+1','refused_by_generation_responses','refused_by_generation_attempts','post_redeem','last_diagnosis','overflow_probe','preserved_but_blocked','policy_reserve','reminder_tokens','510','512 B','rebase_base','native_mid','predecessor_identity','pending{sequence}','mc_reduce_command_ledger','owner_key','one fence-bearing coordinated ck-mc bounce','InternalService','Principal::Reserved','FLAG_BINARY','max_concurrent_per_attempt=2','max_bytes_per_attempt=48 MiB','max_chunk_bytes=1 MiB','release_attempt_id','already_redeemed','RELEASE_INTENT→NEVER_SEND','Constraint one','Constraint two','Constraint three','Constraint four','Constraint five','hard_required = X + R','token_fit = soft_ok AND hard_ok']:
  assert needle in c,needle
