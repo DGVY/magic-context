@@ -66,34 +66,41 @@ The gateway's existing plan_outcome check requires a coverage anchor inside the 
 5. Evidence required before mint: (a) positive — MC module → core serves `d5_carry` on a redeemed successor's first DEFER with members matching the returned messages and the gateway accepting; (b) negatives, each 503 with zero upstream — field absent on a redeemed successor; receipt_id of a different receipt; manifest_digest tampered; row_version regressed; correct metadata + a missing member; correct metadata + changed member bytes; correct metadata + duplicated or reordered members; native coverage anchor present but carry missing; all hermetic against the vendored anchor shapes and the MC specimen fixture.
 6. Ownership: the field and its population are MC (mc-module `transform.rs`, slice 3); the verification predicate and the 503s are gateway (Thalamus). The contract carries the schema and the predicate text; each side's I-item cites the other's test.
 
-## R16 — Complete redeem type, no-candidate observation, replay precedence, marker parse results (2026-09-13; supersedes earlier R16 texts)
+## R16 — Complete redeem type and total precedence grid (2026-09-13; supersedes earlier R16 texts)
 
 **Operation.** `redeem(P, agent, incarnation, observation: RecognitionObservation, candidate: Option<SuccessorCandidate>) -> RedeemResult`. Redeem is addressed by scope; MC resolves the receipt for `(P, agent, incarnation)` itself. The gateway never supplies a `LineageEdge`; MC mints it and returns it in `REDEEMED { receipt_id, edge, existing, fence_generation }`.
 
-**No-candidate observation.** For `scan_source = no_candidate_block`, `scanned_identity`, `scanned_bytes_sha256`, and `scanned_kind` are none. When a first native user message exists but has no scannable scalar/text block, `scanned_role = user` and `native_user_index = 0`; those two fields are none only when no user message exists. `observed_markers` is empty and `candidate` is none in both shapes.
+**No-candidate observation.** For `scan_source = no_candidate_block`, `scanned_identity`, `scanned_bytes_sha256`, and `scanned_kind` are none. When a first native user message exists but has no scannable scalar/text block, `scanned_role = user` and `native_user_index = 0`; those two fields are none only when no user message exists. `observed_markers` is empty and `candidate` is none in both consistent shapes. Any departure is metadata-inconsistent and reaches a typed refusal row.
 
 **Marker validity.** A valid marker is exactly 64 bytes including the leading space: ` mc-d5:` (7 bytes), a lowercase UUID36, `:`, and a canonical 20-byte unpadded lowercase RFC 4648 base32 encoding of exactly 96 bits; the final base32 character's low four bits are zero. A scanned token beginning with `mc-d5:` is malformed when the leading space is missing, the total length differs, base32 is non-canonical or non-lowercase, or the UUID form is invalid. `token_prefix` records the scanned bytes verbatim (up to 64 bytes).
 
 **Encoding rule.** No lineage serializer exists at this baseline, so clause 2 is pinned directly: request `{"op":"redeem",...}` is internally tagged with fields beside `op` and no `args` wrapper; response is the externally keyed `{"redeem":{"result":...}}` shape denoted by `LineageResponse = redeem {result: RedeemResult}`; nested unions are internally tagged by `kind`; this is the rule slice 2 must implement (the closest module tagged union is `crates/mc-module/src/tail_hygiene.rs:1212-1238`, while `crates/mc-module/src/lib.rs:793-863` is a struct request and supplies no contrary lineage convention).
 
-**Single precedence table.** Rows are evaluated in priority order. “Negative” means `no_candidate_block`, no marker, malformed marker, duplicate valid markers, or a foreign-receipt marker. `seal_material_mismatch` precedes candidate consistency. Against `REDEEMED`, the stored edge wins only when the observation also contains the single valid marker matching that edge.
+**Independent precondition product.** The fixture owns dimension lists independently of these rows: scope is `absent | SEALED | REDEEMED`; observation is `no_candidate_block | no_marker | malformed | duplicate_valid | foreign_receipt | matching_receipt_wrong_token | single_valid_stored_marker`; delivery evidence is `ok | missing`, where missing is exactly `may_have_replied=false` and `ack=none`; metadata is `consistent | inconsistent`. Candidate is `none | continuation_mismatch | native_mismatch | other`, plus `observation_consistent` only for `SEALED` and `stored_edge_equal` only for `REDEEMED`; an absent scope classifies every present candidate as `other`. The test enumerates the scoped product and requires exactly one matching row. A row may collapse a whole dimension only by naming that dimension in its fixture `applies_regardless_of` list.
 
-| Row | Scope | Observation precondition | Candidate precondition | Exact `RedeemResult` variant | Exact reason/cause |
-|---|---|---|---|---|---|
-| `P01_absent_scope` | absent | any | any | `REFUSED` | `resolved_absent` |
-| `P02_redeemed_matching_candidate_and_marker` | `REDEEMED` | single valid stored marker | stored-edge equal | `REDEEMED { existing:true }` with byte-identical stored edge | — |
-| `P03_redeemed_matching_candidate_negative_observation` | `REDEEMED` | negative | stored-edge equal | `REFUSED` | `already_redeemed` |
-| `P04_redeemed_different_candidate` | `REDEEMED` | any | different | `REFUSED` | `already_redeemed` |
-| `P05_redeemed_no_candidate` | `REDEEMED` | any | none | `REFUSED` | `already_redeemed` |
-| `P06_sealed_wrong_token_with_candidate` | `SEALED` | matching receipt, canonical token differs from sealed token | present | `REFUSED` | `seal_material_mismatch` |
-| `P07_sealed_candidate_without_single_valid_marker` | `SEALED` | negative | present | `REFUSED` | `invalid_arguments` |
-| `P08_sealed_candidate_marker_identity_mismatch` | `SEALED` | single valid stored marker | `continuation_identity` differs from observed marker | `REFUSED` | `invalid_arguments` |
-| `P09_sealed_candidate_native_identity_mismatch` | `SEALED` | single valid stored marker | `native_continuation_identity` differs from `scanned_identity` | `REFUSED` | `invalid_arguments` |
-| `P10_sealed_no_candidate_block` | `SEALED` | `no_candidate_block` | none | `UNRECOGNIZED` | `no_candidate_block` |
-| `P11_sealed_no_marker` | `SEALED` | no marker | none | `UNRECOGNIZED` | `no_marker` |
-| `P12_sealed_malformed_marker` | `SEALED` | malformed marker | none | `UNRECOGNIZED` | `malformed_marker` |
-| `P13_sealed_duplicate_valid_marker` | `SEALED` | duplicate valid markers | none | `UNRECOGNIZED` | `duplicate_marker` |
-| `P14_sealed_foreign_receipt` | `SEALED` | one valid marker for another receipt | none | `UNRECOGNIZED` | `foreign_marker` |
-| `P15_sealed_positive` | `SEALED` | single valid stored marker | present and observation-consistent | `REDEEMED { existing:false }` | — |
+**Evaluation order.** Combined failures are decided in this fixed order: scope state, delivery evidence, metadata consistency, marker/token classification, then candidate relation. Thus absent always returns `resolved_absent`; every non-success case on `REDEEMED` returns `already_redeemed`; missing delivery evidence on `SEALED` beats inconsistent metadata and wrong-token material; inconsistent metadata then beats wrong-token material; a matching-receipt wrong token then beats candidate consistency. No evaluator fallback exists.
 
-Every `UNRECOGNIZED` keeps `SEALED`, increments owner-scoped `unrecognized_successors`, forwards nothing, and mints no S. Every replay refusal touches no counter or custody and mints nothing. A `REDEEMED` scope with a missing S row returns `lineage_corrupt`, never remints. No fabricated identity / no sentinel / invalid scope local. No second redemption.
+| Row | Scope | Delivery | Metadata | Observation | Candidate | Applies regardless of | Exact result |
+|---|---|---|---|---|---|---|---|
+| `P01_absent_scope` | absent | both | both | all seven | both scoped values | delivery, metadata, observation, candidate | `REFUSED resolved_absent` |
+| `P02_redeemed_matching_candidate_and_marker` | `REDEEMED` | ok | consistent | single valid stored marker | stored-edge equal | — | `REDEEMED { existing:true }`, byte-identical stored edge |
+| `P03_redeemed_nonmatching_observation` | `REDEEMED` | ok | consistent | the other six classes | all five scoped values | candidate | `REFUSED already_redeemed` |
+| `P04_redeemed_nonmatching_candidate` | `REDEEMED` | ok | consistent | single valid stored marker | none, continuation mismatch, native mismatch, or other | — | `REFUSED already_redeemed` |
+| `P05a_redeemed_delivery_missing` | `REDEEMED` | missing | both | all seven | all five scoped values | metadata, observation, candidate | `REFUSED already_redeemed` |
+| `P05b_redeemed_metadata_inconsistent` | `REDEEMED` | ok | inconsistent | all seven | all five scoped values | observation, candidate | `REFUSED already_redeemed` |
+| `P06_sealed_wrong_token_any_candidate` | `SEALED` | ok | consistent | matching receipt, wrong canonical token | all five scoped values | candidate | `REFUSED seal_material_mismatch` |
+| `P07_sealed_candidate_without_single_valid_marker` | `SEALED` | ok | consistent | no-candidate block, no marker, malformed, duplicate valid, or foreign receipt | any non-none candidate | — | `REFUSED invalid_arguments` |
+| `P08_sealed_candidate_marker_identity_mismatch` | `SEALED` | ok | consistent | single valid stored marker | continuation mismatch | — | `REFUSED invalid_arguments` |
+| `P09_sealed_candidate_native_identity_mismatch` | `SEALED` | ok | consistent | single valid stored marker | native mismatch | — | `REFUSED invalid_arguments` |
+| `P10_sealed_no_candidate_block` | `SEALED` | ok | consistent | no-candidate block | none | — | `UNRECOGNIZED no_candidate_block` |
+| `P11_sealed_no_marker` | `SEALED` | ok | consistent | no marker | none | — | `UNRECOGNIZED no_marker` |
+| `P12_sealed_malformed_marker` | `SEALED` | ok | consistent | malformed | none | — | `UNRECOGNIZED malformed_marker` |
+| `P13_sealed_duplicate_valid_marker` | `SEALED` | ok | consistent | duplicate valid | none | — | `UNRECOGNIZED duplicate_marker` |
+| `P14_sealed_foreign_receipt` | `SEALED` | ok | consistent | foreign receipt | none | — | `UNRECOGNIZED foreign_marker` |
+| `P15_sealed_positive` | `SEALED` | ok | consistent | single valid stored marker | observation-consistent | — | `REDEEMED { existing:false }` |
+| `P16_sealed_marker_without_candidate` | `SEALED` | ok | consistent | single valid stored marker | none | — | `REFUSED invalid_arguments` |
+| `P17_sealed_marker_other_candidate` | `SEALED` | ok | consistent | single valid stored marker | other | — | `REFUSED invalid_arguments` |
+| `P18_sealed_delivery_missing` | `SEALED` | missing | both | all seven | all five scoped values | metadata, observation, candidate | `REFUSED invalid_arguments` |
+| `P19_sealed_metadata_inconsistent` | `SEALED` | ok | inconsistent | all seven | all five scoped values | observation, candidate | `REFUSED invalid_arguments` |
+
+**Clause 10 adjustment.** Before: “Failure keeps SEALED, increments bounded owner-scoped unrecognized_successors, forwards nothing and mints no S” and “negative observation, different candidate or no candidate is REFUSED already_redeemed”. After: only `UNRECOGNIZED` keeps `SEALED` and increments `unrecognized_successors`; every `REFUSED` is write-free. On `SEALED`, a valid stored marker without a candidate, missing delivery evidence, or inconsistent metadata is `invalid_arguments`; a matching-receipt wrong token is `seal_material_mismatch` for every candidate. On `REDEEMED`, only the exact all-good replay cell succeeds and every other product cell is `already_redeemed` without counter or custody effect. A `REDEEMED` scope with a missing S row returns `lineage_corrupt`, never remints. No fabricated identity, sentinel, fallback, or second redemption.
