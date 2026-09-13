@@ -104,3 +104,28 @@ The gateway's existing plan_outcome check requires a coverage anchor inside the 
 | `P19_sealed_metadata_inconsistent` | `SEALED` | ok | inconsistent | all seven | all five scoped values | observation, candidate | `REFUSED invalid_arguments` |
 
 **Clause 10 adjustment.** Before: “Failure keeps SEALED, increments bounded owner-scoped unrecognized_successors, forwards nothing and mints no S” and “negative observation, different candidate or no candidate is REFUSED already_redeemed”. After: only `UNRECOGNIZED` keeps `SEALED` and increments `unrecognized_successors`; every `REFUSED` is write-free. On `SEALED`, a valid stored marker without a candidate, missing delivery evidence, or inconsistent metadata is `invalid_arguments`; a matching-receipt wrong token is `seal_material_mismatch` for every candidate. On `REDEEMED`, only the exact all-good replay cell succeeds and every other product cell is `already_redeemed` without counter or custody effect. A `REDEEMED` scope with a missing S row returns `lineage_corrupt`, never remints. No fabricated identity, sentinel, fallback, or second redemption.
+
+## R17 — CoverageProofV1: the encodable coverage-proof algebra (2026-09-13)
+
+`CarryProjectionV1.coverage_proof` was prose ("receipt-backed manifest or real-compartment proof"); it is now `ordered list<CoverageProofV1>` with
+
+```text
+CoverageProofV1 = receipt_backed { covered:ordered list<BlockIdentity> }
+                | real_compartment { covered:ordered list<BlockIdentity>,compartment_sequence:integer,coverage_end:Ordinal,unit:UnitKey,row_version:RowVersion }
+                | discharged { by: fold { compartment_sequence:integer,folded_frontier:Ordinal }
+                                 | reduction { units:ordered list<UnitKey>,projection_digest:Digest }
+                                 | custody_transfer { transferee_receipt_id:ReceiptId,edge_id:EdgeId } }
+```
+
+**Obligation.** The obligation is the sealed manifest's member set (ManifestV1 entries, in manifest order). A carry projection is COVERED when the union of every proof's `covered` lists equals that set exactly once (no missing, no duplicate, no identity outside the manifest), OR the list is exactly one `discharged` proof.
+
+**Per-variant semantics (gateway-verifiable from the returned messages plus its own receipt record).**
+- `receipt_backed{covered}`: each covered member is present in the served carry span (located by manifest `native_mid` + block index per clause 21a), in manifest order, with `members[].validation = frozen{served_sha256}` and the digest equal to the archive bytes under `mc.d5.block.served.v1`. Nothing else is claimed.
+- `real_compartment{covered,compartment_sequence,coverage_end,unit,row_version}`: each covered member is ABSENT from the served array (folded), `coverage_end >= member.ordinal` for every covered member, and `unit` is the committed unit whose `mc.d5.unit-projection.v1` digest the gateway already holds for that compartment sequence from a prior pass (or the current `projection_digest.units` names it); `row_version` is monotone non-decreasing per (receipt, compartment_sequence). A `real_compartment` proof whose `coverage_end` precedes any covered ordinal is a mismatch.
+- `discharged{by}`: the whole obligation is retired; the gateway clears "carry outstanding" for this receipt after verifying the discharge evidence: `fold` → `folded_frontier >= last manifest ordinal`; `reduction` → `projection_digest` equals `mc.d5.projection.v1` over the listed units and every manifest member maps to a listed unit; `custody_transfer` → `transferee_receipt_id` is a receipt the gateway itself holds REDEEMED with `edge_id` equal to that receipt's edge. A `discharged` proof MUST be the only element; a list mixing `discharged` with other variants is a mismatch. After a verified discharge, `d5_carry` absence on later passes is normal (clause 21a "absence declares no served carry").
+
+**Refusals.** Missing `coverage_proof` while carry is outstanding → `503 d5_carry_proof_missing`. Any of: union ≠ manifest set, a `receipt_backed` member absent or digest-mismatched, a `real_compartment` member present or `coverage_end` too low, an unknown unit, non-monotone `row_version`, `discharged` not alone, or discharge evidence failing → `503 d5_carry_proof_mismatch`. Unsupported variant tag → `d5_carry_proof_mismatch` (never a serializer error passthrough).
+
+**Encoding.** Same rule as R16: nested unions internally tagged with `kind`; `by` is itself a `kind`-tagged union. Vectors: `crates/mc-module/tests/fixtures/d5-specimen/coverage-proof-vectors-v1.json` (fixture-derived, owner-authored expectations, oracle-verified; see the fixture task) — positive receipt_backed, positive mixed (receipt_backed + real_compartment), each discharge form, and the negatives: missing member, duplicate member, foreign identity, present-but-folded member, coverage_end too low, unknown unit, row_version regression, discharged-not-alone, wrong transferee, unsupported variant tag.
+
+**Ownership.** MC populates `coverage_proof` (slice 3); the gateway verifies (their carry-proof path); slice 0 owns the vector fixture. No new operation; no change to receipts, manifests or archives.
