@@ -131,7 +131,7 @@ lineage.finish(upload_id:UploadId,digest:Digest) -> FinishResult
 
 3a. **Typed operation transport.** Unary JSON is one version-1 request or matching response with op; nested payload kind remains available, so begin carries op=begin and kind=source_segment without duplicate keys. Bytes are base64, absent options omitted, PFence.none present. Lifecycle refusal with proof and fence stays inside prepare or resolve; validation and upload conflicts stay in their op result. Only framing, unidentifiable JSON, service absence and authority denial use outer ErrorBody. Fixtures pin SEALED prepare, begin, and rowless resolve beside another SEALED fence.
 
-3b. **Scope bootstrap.** incarnation and lineage_id are MC-minted; clients echo them and never invent them. scope.open is an idempotent get-or-create of the (owner_key(P),agent) scope row in one write transaction: an existing row returns unchanged with created=false; an absent row mints incarnation from MC's per-owner monotonic counter and binds lineage_id to MC's current lineage for the owner (its descent lineage, else a lineage minted for the scope). Fresh path order: scope.open, reconcile any durable old attempt, persist attempt, F, allocation and ingress (31), sample and CAS-bind one ticket, prepare. Recovery resolves with the ORIGINAL attempt and ticket and never samples a new ticket before resolve. If the opened incarnation differs from a locally unresolved or custody-bearing attempt, the gateway keeps that record and fails closed: it neither adopts the new incarnation nor clears the obligation; MC refuses the stale one as stale_incarnation (15). session.status (26a) relays the row and never mints. resolve_generation is per scope row and persists across recreation, never resetting. Vectors: scope-open-vectors-v1.json.
+3b. **Scope bootstrap.** incarnation and lineage_id are MC-minted; clients echo, never invent. scope.open is an idempotent get-or-create of the (owner_key(P),agent) scope row in one write transaction: an existing row returns unchanged, created=false; an absent row mints incarnation from MC's per-owner monotonic counter and binds lineage_id to MC's current lineage for the owner (descent lineage, else one minted for the scope). Fresh path: scope.open, reconcile any durable old attempt, persist attempt, F, allocation, ingress (31), sample and CAS-bind one ticket, prepare. Recovery resolves with the ORIGINAL attempt and ticket, never a new ticket before resolve. An opened incarnation differing from a locally unresolved or custody-bearing attempt: the gateway keeps that record and fails closed (no adoption, obligation intact); MC refuses the stale one as stale_incarnation (15). session.status (26a) relays, never mints. resolve_generation is per scope row and persists across recreation, never resetting. Vectors: scope-open-vectors-v1.json.
 
 4. **Stateless tickets and generation fencing.** attempt.ticket samples the fence without write, issuance record, ledger, custody, orphan or ticket_id; concurrent calls and calls beside seal write zero ticket rows; lost samples are discardable. A post-seal call samples the advanced resolve_generation. Admission and seal compare its generation and incarnation; delayed handlers never refresh it. resolve_generation closes potential seals; fence_generation protects ordinary admission; neither is a delivery or timeout counter.
 
@@ -188,11 +188,11 @@ token_fit = soft_ok AND hard_ok
 
 ### successor semantics
 
-20. **Every-pass carry.** TransformResponse.d5_carry serves carry after m0 and m1, before continuation, on first HARD, every DEFER, growth and restart for a redeemed D5 successor; serde defaults and omits none; absence means no receipt-backed carry this pass. Validated folds or reductions alone retire intervals; partial fold causes SOFT. Carry precedes retention and pruning; validation is clause 21a; tags, versions, hosts and fresh digests authorize nothing.
+20. **Every-pass carry.** TransformResponse.d5_carry serves carry after m0 and m1, before continuation, on first HARD, every DEFER, growth and restart for a redeemed D5 successor; serde defaults, omits none; absent means no receipt-backed carry this pass. Only validated folds or reductions retire intervals; partial fold causes SOFT. Carry precedes retention and pruning; 21a validates; tags, versions, hosts and fresh digests authorize nothing.
 
-21. **Distinct frontiers and proofs.** folded_frontier ends real compartments; first_inherited_ordinal starts carry; source_frontier MAY advance. lineage_anchor and native_continuation_identity are live-native; frozen rebase_base alone rebases. Specimen: folded 1798, carry 1799-1939, base 1939, continuation 1940. Folds advance coverage_identity, never native continuation; no fold is none. Eligible head is folded_frontier+1 or first inherited. Historian uses archive plus suffix, no floor change. Receipt or real-compartment proof drives coverage; native continuation and base drive rebase, marker, reconcile and trim; native absence never truncates carry.
+21. **Distinct frontiers and proofs.** folded_frontier ends real compartments; first_inherited_ordinal starts carry; source_frontier MAY advance. lineage_anchor and native_continuation_identity are live-native; frozen rebase_base alone rebases. Specimen: folded 1798, carry 1799-1939, base 1939, continuation 1940. Folds advance coverage_identity, never native continuation; no fold is none. Eligible head is folded_frontier+1 or first inherited. Historian uses archive plus suffix, no floor change. Receipt or real-compartment proof drives coverage; native continuation and base drive rebase, marker, reconcile, trim; native absence never truncates carry.
 
-21a. **Gateway carry-proof path.** While a receipt-backed carry is locally outstanding (REDEEMED, not discharged by verified fold, reduction or custody transfer) the gateway evaluates d5_carry first every pass, anchor or not. Required: schema_version=1; the locally REDEEMED receipt_id for (P,agent,incarnation); the sealed manifest_digest; every projection_digest unit validated from returned bytes at its locator before any proof is read; coverage_proof whose covered identities equal the manifest members exactly once (receipt_backed members frozen or as their validated unit; real_compartment members absent inside a validated non-empty compartment unit's coverage) or one discharged proof bound to units validated THIS pass or lineage custody of this receipt (R17); row_version equal or above last accepted. Custody is proved by locator: before gateway markers the array is m0, m1, carry span, native suffix; a member (mid, index, ordinal) is found via the sealed manifest entry with that native_mid and block index; the carry span is the run of returned messages whose mids the manifest names, in manifest order, each once; a folded or reduced member is absent or its committed unit, never source; location is by mid and index, never offset; frozen served_sha256 under mc.d5.block.served.v1; reduced digest under mc.d5.unit-projection.v1; aggregate projection_digest under mc.d5.projection.v1. Metadata, high ordinal, flag or empty boundary is insufficient. Missing: 503 d5_carry_proof_missing; mismatch: 503 d5_carry_proof_mismatch; never raw or upstream. All four D5 refusals: one HTTP 503 application/json family, error.code = the literal, no message asserting unverified history intact. Absence declares no served carry, discharging nothing. Native checks then run unchanged: envelope, provider shape, native-owned lineage_anchor, continuation_identity, rebase_base; after a valid proof the inherited anchor (coverage_identity, folded_frontier, first_inherited_ordinal) is never re-required natively. Omitted carry fails beside a valid native anchor. Without outstanding carry only the native path runs with the pre-D5 anchor check; absence is normal.
+21a. **Gateway carry-proof path.** While a receipt-backed carry is locally outstanding (REDEEMED, not discharged by verified fold, reduction or custody transfer) the gateway evaluates d5_carry first every pass, anchor or not. Required: schema_version=1; the locally REDEEMED receipt_id for (P,agent,incarnation); the sealed manifest_digest; every projection_digest unit validated from returned bytes at its locator before any proof is read; coverage_proof whose covered identities equal the manifest members exactly once (receipt_backed members frozen or as their validated unit; real_compartment members absent inside a validated non-empty compartment unit's coverage) or one discharged proof bound to units validated THIS pass or lineage custody of this receipt (R17); row_version equal or above last accepted. Custody is proved by locator: before gateway markers the array is m0, m1, carry span, native suffix; a member (mid, index, ordinal) is found via the sealed manifest entry with that native_mid and block index; the carry span is the run of returned messages whose mids the manifest names, in manifest order, each once; a folded or reduced member is absent or its committed unit, never source; location is by mid and index, never offset; frozen served_sha256 under mc.d5.block.served.v1; reduced digest under mc.d5.unit-projection.v1; aggregate projection_digest under mc.d5.projection.v1. No applied-state snapshot or MC-checked reference travels on the pass path: MC projects from its own A before responding; the gateway checks only this list against returned bytes and its receipt, keeping row_version as an opaque monotonic reference; ArchiveV1.A exists only at seal. Metadata, high ordinal, flag or empty boundary is insufficient. Missing: 503 d5_carry_proof_missing; mismatch: 503 d5_carry_proof_mismatch; never raw or upstream. All four D5 refusals: one HTTP 503 application/json family, error.code = the literal, no message asserting unverified history intact. Absence declares no served carry, discharging nothing. Native checks then run unchanged: envelope, provider shape, native-owned lineage_anchor, continuation_identity, rebase_base; after a valid proof the inherited anchor (coverage_identity, folded_frontier, first_inherited_ordinal) is never re-required natively. Omitted carry fails beside a valid native anchor. Without outstanding carry only the native path runs with the pre-D5 anchor check; absence is normal.
 
 22. **Anchor absorption and sequence accounting.** Only lineage_boundary is coverage- and overlap-exempt: coverage excludes it; max_sequence and m0/m1 sequences include it; partition excludes by type; rendered m1 advances only on real compartments. Partial 1799-1905 leaves anchor 1940 and remainder. Crossing 1799-1950 atomically removes it, preserving native_continuation_identity and anchor MID; coverage advances while continuation and base stay. Snapshot, generation and append agree.
 
@@ -202,44 +202,44 @@ token_fit = soft_ok AND hard_ok
 
 ### consumer rebind
 
-25. **D5 isolation and accessor fence.** D5 changes require a receipt or lineage_boundary; OpenCode, Pi, COALESCE(MAX(end_message),0) and unlisted callers are unchanged. The Option sibling's five (file,symbol) callers (26 paths) are mc-module/lib.rs::prepare_historian_fire and ::handle_ctx_expand_facade, mc-module/transform.rs::coverage_ordinal_from_compartments and ::apply_once, and mc-module/m0_compose.rs::compose_m0_from_store_timed. The mc-store accessor is only the definition. d5_option_callers_are_a_closed_set_of_five uses literal 5 against declared and discovered pairs, ignoring line drift, failing set drift.
+25. **D5 isolation and accessor fence.** D5 changes require a receipt or lineage_boundary; OpenCode, Pi, COALESCE(MAX(end_message),0) and unlisted callers are unchanged. The Option sibling's five (file,symbol) callers (26 paths): mc-module/lib.rs::prepare_historian_fire, ::handle_ctx_expand_facade; mc-module/transform.rs::coverage_ordinal_from_compartments, ::apply_once; mc-module/m0_compose.rs::compose_m0_from_store_timed. The mc-store accessor is only the definition. d5_option_callers_are_a_closed_set_of_five pins literal 5 against declared and discovered pairs, ignoring line drift, failing set drift.
 
 25a. **Receipt-absent descent.** lineage.d5.require_receipt_for_descent ships true for Claude Code D5 after the bounce; false is explicit non-D5 only. Nonempty uncovered tail without matching SEALED returns d5_receipt_required without mutation. False retains legacy descent and writes mc_d5_uncovered_descent{owner_key,lineage_id,first,last,observed_at}; the existing specimen keeps (1,3),(4,6),(11,11), coverage 11 and reports 7-10. Clear only after full redeemed or real-fold proof, or owner deletion. I12 has a receipt. Redeem uses its dedicated lineage_corrupt variant; other ops use the refusal reason.
 
 26. **Single consumer inventory.** Rows name crates/<crate>/src paths as <crate>/<file>. Re-cite rows at dispatch; each has one slice and owner (mc unless outside/specimen). Three TS rows are not-this-campaign.
 
-| Consumer and source site | Owner | Observable |
+|Consumer and source site|Owner|Observable|
 |---|---|---|
-| mc-store/lib.rs:10916,10997-11007,11080-11095,11230-11244 | s1 | Native continuation, real coverage, archive |
-| mc-module/compartment_coverage.rs:180-202 | s3 | Coverage and anchor sequence |
-| mc-module/m1_compose.rs:313,328-344 | s3 | Real-compartment coverage only |
-| mc-module/m1_compose.rs, partition_by_folded_seq and m1_compartment_seq | s3 | Anchor excluded; sequence included |
-| mc-module/m0_compose.rs:434-449 | s3 | Option caller; ordinal and sequence |
-| mc-module/transform.rs:7296-7308 | s3 | coverage_ordinal_from_compartments |
-| mc-module/transform.rs:4150-4151 | s3 | apply_once coverage and trim |
-| mc-module/transform.rs:4744-4751,4753-4789,4779-4790 | s3 | History plus carry |
-| mc-module/transform.rs:4812-4854,4912-4917 | s3 | Receipt and native proofs |
-| mc-module/transform.rs:5261-5309 | s3 | Partial carry and native trim |
-| mc-module/lib.rs:5198-5260 | s4 | Historian Option caller |
-| mc-module/historian_chunk.rs:626-674 | s4 | Carry plus suffix snapshot |
-| mc-store/lib.rs:12451-12495,16663-16713 | s1 | Absorption transaction; s3 semantics |
-| mc-store/lib.rs:10445-10473 | s1 | Accessor definition; non-D5 isolation |
-| mc-module/lib.rs:11907-11935 | s4 | Projection before fallback |
-| mc-module/lib.rs:11952-11999 | s4 | ctx_expand Option caller |
-| mc-module/transform.rs:7843-7864 | s3 | Membership proofs |
-| mc-module/transform.rs:7866-7904 | s3 | Coordinate-specific proofs |
-| mc-module/transform.rs:7894-7995,8002-8009 | s3 | Coverage, trim, endpoint |
-| mc-module/transform.rs:6134-6140 | s3 | Coverage versus native marker |
-| mc-module/transform.rs, continuation_summary_anchor and the NotCompactionShape and ObservedFlagMissingShapePresent dispositions | s4 | Marker dispositions |
-| packages/plugin/src/features/magic-context/compaction-marker.ts; packages/plugin/src/hooks/magic-context/rust-mode-transform.ts:682-712,3377-3379 | outside | Shape parity only; native mapping; native presence |
-| mc-module/decay_render.rs:45-53,235-237,328-342,395-398 | s4 | Empty parity; D5 exclusion |
-| mc-module/transform.rs:37308-37329,37371-37441 | s4 specimen | I12 tail |
-| mc-module/transform.rs:4922-4939 | s3 | Carry permissions |
-| mc-store/lib.rs:11070-11076 | s1 | Reduction-permission read |
-| mc-store/lib.rs:7444-7490 | s1 | Owner deletion |
-| mc-store/lib.rs:7697-7829 | s1 | Health snapshot |
-| mc-module/lib.rs::handle_session_status_value | s2 | ManagementSurface attachment. |
-| mc-module/transform.rs:2540-2589 | s3 | Frozen rebase_base |
+|mc-store/lib.rs:10916,10997-11007,11080-11095,11230-11244|s1|Native continuation, real coverage, archive|
+|mc-module/compartment_coverage.rs:180-202|s3|Coverage and anchor sequence|
+|mc-module/m1_compose.rs:313,328-344|s3|Real-compartment coverage only|
+|mc-module/m1_compose.rs, partition_by_folded_seq and m1_compartment_seq|s3|Anchor excluded; sequence included|
+|mc-module/m0_compose.rs:434-449|s3|Option caller; ordinal and sequence|
+|mc-module/transform.rs:7296-7308|s3|coverage_ordinal_from_compartments|
+|mc-module/transform.rs:4150-4151|s3|apply_once coverage and trim|
+|mc-module/transform.rs:4744-4751,4753-4789,4779-4790|s3|History plus carry|
+|mc-module/transform.rs:4812-4854,4912-4917|s3|Receipt and native proofs|
+|mc-module/transform.rs:5261-5309|s3|Partial carry and native trim|
+|mc-module/lib.rs:5198-5260|s4|Historian Option caller|
+|mc-module/historian_chunk.rs:626-674|s4|Carry plus suffix snapshot|
+|mc-store/lib.rs:12451-12495,16663-16713|s1|Absorption transaction; s3 semantics|
+|mc-store/lib.rs:10445-10473|s1|Accessor definition; non-D5 isolation|
+|mc-module/lib.rs:11907-11935|s4|Projection before fallback|
+|mc-module/lib.rs:11952-11999|s4|ctx_expand Option caller|
+|mc-module/transform.rs:7843-7864|s3|Membership proofs|
+|mc-module/transform.rs:7866-7904|s3|Coordinate-specific proofs|
+|mc-module/transform.rs:7894-7995,8002-8009|s3|Coverage, trim, endpoint|
+|mc-module/transform.rs:6134-6140|s3|Coverage versus native marker|
+|mc-module/transform.rs, continuation_summary_anchor and the NotCompactionShape and ObservedFlagMissingShapePresent dispositions|s4|Marker dispositions|
+|packages/plugin/src/features/magic-context/compaction-marker.ts; packages/plugin/src/hooks/magic-context/rust-mode-transform.ts:682-712,3377-3379|outside|Shape parity only; native mapping; native presence|
+|mc-module/decay_render.rs:45-53,235-237,328-342,395-398|s4|Empty parity; D5 exclusion|
+|mc-module/transform.rs:37308-37329,37371-37441|s4 specimen|I12 tail|
+|mc-module/transform.rs:4922-4939|s3|Carry permissions|
+|mc-store/lib.rs:11070-11076|s1|Reduction-permission read|
+|mc-store/lib.rs:7444-7490|s1|Owner deletion|
+|mc-store/lib.rs:7697-7829|s1|Health snapshot|
+|mc-module/lib.rs::handle_session_status_value|s2|ManagementSurface attachment.|
+|mc-module/transform.rs:2540-2589|s3|Frozen rebase_base|
 
 26a. **Status surface.** session.status always adds sorted d5:HealthD5 for mapped owner_key, incarnation and lineage. Receipt, corruption, refusal and recognition data use current owner_key; descent uses owner_key plus lineage_id. After REDEEMED, all post_redeem data belongs to S; P has no S relief and blocked {preserved_but_blocked:false,overflow_refusals:0}. One snapshot read composes it. No rows means empty lists, zero counters, no prefix, that blocked object and state ok. Other surfaces only relay.
 
@@ -257,7 +257,7 @@ token_fit = soft_ok AND hard_ok
 
 29. **Dedicated route and trusted authority.** ck-mc InternalService{module_id:"magic-context",service_id:"mc.lineage"} admits only daemon-stamped Principal::Reserved{module_id:"thalamus"}; BindIdentity is untrusted; ManagementSurface stays open; no MCP exposure, generic wire change or pin bump. Unary Vec<u8> JSON bodies never set FLAG_BINARY, allow at most 64 MiB, never stream requests. Typed outcomes remain whole; only framing, authority and unidentifiable JSON use ErrorBody.
 
-30. **Chunked prepare and upload custody.** Gateway MUST use inline prepare at serialized body≤1 MiB and ref above; raw_chunk_bytes≤1 MiB and serialized_body_bytes≤64 MiB are distinct, so the larger base64 put frame is valid. source_segment uploads use ordered raw SHA-256. begin keyed by (AttemptKey,ticket,kind,digest) replays upload_id; changed totals refuse. Same seq and bytes replay; changed bytes conflict; finish verifies and replays UploadRef; digest failure deletes only unreferenced staging. Invalid tickets cannot finish or reference; staging expires only with a terminal attempt or new incarnation. max_concurrent_per_attempt=2, max_bytes_per_attempt=48 MiB raw, max_chunk_bytes=1 MiB raw are per-attempt aggregate limits; an accepted seq counts once. D expires neither staging nor seal.
+30. **Chunked prepare and upload custody.** Gateway MUST use inline prepare at serialized body≤1 MiB, ref above; raw_chunk_bytes≤1 MiB and serialized_body_bytes≤64 MiB are distinct, so the larger base64 put frame is valid. source_segment uploads use ordered raw SHA-256. begin keyed by (AttemptKey,ticket,kind,digest) replays upload_id; changed totals refuse. Same seq and bytes replay; changed bytes conflict; finish verifies and replays UploadRef; digest failure deletes only unreferenced staging. Invalid tickets cannot finish or reference; staging expires only with a terminal attempt or new incarnation. max_concurrent_per_attempt=2, max_bytes_per_attempt=48 MiB raw, max_chunk_bytes=1 MiB raw are per-attempt aggregate limits; an accepted seq counts once. D expires neither staging nor seal.
 
 ### gateway target semantics
 
