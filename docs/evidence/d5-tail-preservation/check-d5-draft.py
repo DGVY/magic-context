@@ -25,7 +25,7 @@ assert len(b)<=85000
 # R17 (CoverageProofV1 became a real tagged type, +~450 B of shared contract);
 # the pipeline's own intake ceiling is 100,000 total, so this stays a fold-growth
 # guard, not a pipeline limit. Do not raise again for prose; only for types.
-assert len(c.encode())<=52000  # v1.3.12: UnitRecordV1 (typed unit locator/coverage) added for R17.2
+assert len(c.encode())<=53200  # v1.3.20: CapacityEstimateV1 (typed pass-path capacity producer) added for R43; raised for the type, not prose
 assert len(a.encode())<=22000
 subs={m[1]:m[0] for m in re.finditer(r'(?ms)^### ([^\n]+)\n(.*?)(?=^### |\Z)',c)}
 assert list(subs)==['types','lifecycle ops','receipt and archive','successor semantics','consumer rebind','transport','gateway target semantics']
