@@ -94,6 +94,7 @@ EnvelopePending = pending {sequence:IngressSequence}
 RefusalReason = invalid_arguments|ticket_invalid|stale_incarnation|budget_unknown|budget_model_mismatch|budget_evidence_mismatch|token_cap|byte_cap|p_already_sealed|seal_material_mismatch|resolved_absent|seal_after_tombstone|seal_after_resolve|attempt_quota|sealed_unredeemed|lineage_corrupt|successor_overflow|already_redeemed|invalid_terminal_state|upload_declaration_conflict|chunk_conflict|upload_digest_mismatch|upload_incomplete|upload_quota|d5_receipt_required|d5_downgrade_refused
 RefusalDetails = none|field {field:text,reason:text}|cap {cap:text,actual:integer,limit:integer,units:text}|winner {receipt_id:ReceiptId}|resolved_absent {attempt_id:AttemptId,incarnation:Incarnation}|upload {upload_id:Option<UploadId>,seq:Option<ChunkSeq>,declared_digest:Option<Digest>,actual_digest:Option<Digest>}|successor_capacity {estimated:TokenCount,actual:TokenCount,actual_source:mc_estimate|provider,usable_hard:TokenCount}
 TicketResult = ISSUED {ticket:AdmissionTicket}|REFUSED {refusal:Refusal where reason=invalid_arguments}
+ScopeResult = OPENED { incarnation:Incarnation,lineage_id:LineageId,resolve_generation:ResolveGeneration,created:boolean }|REFUSED {refusal:Refusal where reason=invalid_arguments}
 BeginResult = BEGUN {upload_id:UploadId}|REFUSED {refusal:Refusal}
 PutResult = STORED {seq:ChunkSeq,chunk_digest:Digest}|REFUSED {refusal:Refusal}
 FinishResult = FINISHED {upload:UploadRef}|REFUSED {refusal:Refusal}
@@ -114,6 +115,7 @@ LineageResponse = ticket {result:TicketResult}|prepare {result:PrepareResult}|re
 3. **Operations and result discipline.** The MC operation surface is:
 
 ```text
+scope.open(P:SessionKey,agent:AgentId) -> ScopeResult
 attempt.ticket(P:SessionKey,agent:AgentId,incarnation:Incarnation) -> TicketResult
 prepare(P:SessionKey,agent:AgentId,F:MaterialFingerprint,source_segment:PrepareSource,attempt_id:AttemptId,incarnation:Incarnation,admission_ticket:AdmissionTicket,ingress:IngressEvidence,budget:PrepareBudgetEvidence) -> PrepareResult
 attempt.resolve(P:SessionKey,agent:AgentId,incarnation:Incarnation,attempt_id:Option<AttemptId>,F:Option<MaterialFingerprint>,admission_ticket:Option<AdmissionTicket>) -> ResolveResult
@@ -128,6 +130,8 @@ lineage.finish(upload_id:UploadId,digest:Digest) -> FinishResult
    Resolve all-none is a write-free restart snapshot; all-present closes; partial arguments return typed invalid_arguments plus transactional fence and generations. Ticket rejects only invalid argument shape, writes no row, changes neither generation; every well-formed ticket call returns a sample. MC validates identities and evidence. Fresh prepare is SEALED; terminals replay; existing and already_released confer no send right. Absence and PREPARING grant nothing; timeout is UNKNOWN.
 
 3a. **Typed operation transport.** Unary JSON is one version-1 request or matching response with op; nested payload kind remains available, so begin carries op=begin and kind=source_segment without duplicate keys. Bytes are base64, absent options omitted, PFence.none present. Lifecycle refusal with proof and fence stays inside prepare or resolve; validation and upload conflicts stay in their op result. Only framing, unidentifiable JSON, service absence and authority denial use outer ErrorBody. Fixtures pin SEALED prepare, begin, and rowless resolve beside another SEALED fence.
+
+3b. **Scope bootstrap.** incarnation and lineage_id are MC-minted; the wire never accepts or fixes them. scope.open is an idempotent get-or-create of the (owner_key(P),agent) scope row in one write transaction: an existing row returns unchanged with created=false; an absent row mints incarnation from MC's per-owner monotonic counter and binds lineage_id to MC's current lineage for the owner (its descent lineage, else a lineage minted for the scope). Order per attempt: scope.open, attempt.ticket, prepare or resolve; the attempt record persists the opened incarnation (31), so a recreation advance (15) refuses stale_incarnation instead of rebinding. session.status (26a) relays the row and never mints. Vectors: fresh scope, existing scope, post-recreation advance, concurrent opens returning one row.
 
 4. **Stateless tickets and generation fencing.** attempt.ticket samples the fence without write, issuance record, ledger, custody, orphan or ticket_id; concurrent calls and calls beside seal write zero ticket rows; lost samples are discardable. A post-seal call samples the advanced resolve_generation. Admission and seal compare its generation and incarnation; delayed handlers never refresh it. resolve_generation closes potential seals; fence_generation protects ordinary admission; neither is a delivery or timeout counter.
 
