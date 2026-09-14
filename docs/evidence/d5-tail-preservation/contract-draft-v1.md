@@ -118,7 +118,7 @@ LineageResponse = ticket {result:TicketResult}|prepare {result:PrepareResult}|re
 
 ```text
 scope.open(P:SessionKey,agent:AgentId) -> ScopeResult
-capacity.begin(P:SessionKey,agent:AgentId,incarnation:Incarnation,total_bytes:ByteCount,total_chunks:integer,digest:Digest,expected_open:Option<UploadId>) -> BeginResult
+capacity.begin(P:SessionKey,agent:AgentId,incarnation:Incarnation,total_bytes:ByteCount,total_chunks:integer,digest:Digest,expected_open:Option<UploadId>) -> BeginResult /* expected_open follows 3a: None omitted, present null rejected */
 capacity.put(upload_id:UploadId,seq:ChunkSeq,bytes:base64) -> PutResult
 capacity.finish(upload_id:UploadId,digest:Digest) -> FinishResult
 capacity.check(P:SessionKey,agent:AgentId,incarnation:Incarnation,body:inline { bytes:base64 }|upload { ref:UploadRef },model:ModelId,geometry:GeometryV1) -> CapacityResult
