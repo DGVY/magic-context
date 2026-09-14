@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "ruling": "R20",
+  "encoding": "clause 2 module conventions: internal `kind` tag, deny_unknown_fields, key order as written, integers checked nonnegative",
+  "provenance_variants": [
+    {
+      "kind": "agent_ctx_reduce",
+      "command_id": "cmd_01J9Z3A4B5C6D7E8F9G0H1J2K3"
+    },
+    {
+      "kind": "age_reclaim"
+    },
+    {
+      "kind": "supersession"
+    },
+    {
+      "kind": "emergency",
+      "band": "force"
+    },
+    {
+      "kind": "emergency",
+      "band": "backstop95"
+    },
+    {
+      "kind": "historian_fold"
+    }
+  ],
+  "protection_specimens": [
+    {
+      "window": {
+        "kind": "none"
+      },
+      "exempt": {
+        "kind": "none"
+      },
+      "exemplar": {
+        "kind": "none"
+      }
+    },
+    {
+      "window": {
+        "kind": "token_window",
+        "floor_snapshot_epoch": 7
+      },
+      "exempt": {
+        "kind": "none"
+      },
+      "exemplar": {
+        "kind": "none"
+      }
+    },
+    {
+      "window": {
+        "kind": "none"
+      },
+      "exempt": {
+        "kind": "mutation_exempt"
+      },
+      "exemplar": {
+        "kind": "none"
+      }
+    },
+    {
+      "window": {
+        "kind": "none"
+      },
+      "exempt": {
+        "kind": "lineage_anchor"
+      },
+      "exemplar": {
+        "kind": "none"
+      }
+    },
+    {
+      "window": {
+        "kind": "none"
+      },
+      "exempt": {
+        "kind": "none"
+      },
+      "exemplar": {
+        "kind": "newest_ctx_reduce_k3"
+      }
+    },
+    {
+      "window": {
+        "kind": "token_window",
+        "floor_snapshot_epoch": 7
+      },
+      "exempt": {
+        "kind": "mutation_exempt"
+      },
+      "exemplar": {
+        "kind": "newest_ctx_reduce_k3"
+      }
+    }
+  ],
+  "provenance_grammar": "provenance = agent_ctx_reduce{command_id:CommandId} | age_reclaim | supersession | emergency{band: force|backstop95} | historian_fold",
+  "protection_grammar": "protection = { window: none | token_window{floor_snapshot_epoch:integer}, exempt: none | mutation_exempt | lineage_anchor, exemplar: none | newest_ctx_reduce_k3 }",
+  "mc_algebra_source": "crates/mc-module/src/selection.rs SelectionContext: tag_window_protected_block_ids (window), exempt_message_protected_block_ids (exempt), newest_ctx_reduce_arc_ids (exemplar); crates/mc-store mc_reduce_command_ledger (agent command_id)"
+}
