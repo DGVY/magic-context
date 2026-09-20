@@ -46,7 +46,7 @@
 import { existsSync } from "node:fs";
 import { log } from "../../shared/logger";
 import {
-    assertOpenCodeStoreGeneration,
+    hasV1MessageTables,
     resolveOpenCodeDbPath,
 } from "../../shared/opencode-db-path";
 import type { Database } from "../../shared/sqlite";
@@ -155,7 +155,16 @@ export function runToolOwnerBackfill(db: Database): BackfillResult {
     const escapedDbPath = opencodeDbPath.replaceAll("'", "''");
     db.exec(`ATTACH '${escapedDbPath}' AS oc_backfill`);
     try {
-        assertOpenCodeStoreGeneration(db, "v1", opencodeDbPath, "oc_backfill");
+        // The backfill reads the v1 message tables, which exist in pure v1 stores
+        // AND in 1.18 -> 2.x migrated stores (the upgrade retires them in name only).
+        // Asserting a single generation throws on migrated stores and silently
+        // degrades every eligible legacy row to the slower lazy-adoption fallback,
+        // so gate on what the backfill actually needs: the tables being present.
+        if (!hasV1MessageTables(db, "oc_backfill")) {
+            throw new Error(
+                `OpenCode store at ${opencodeDbPath} has no v1 message tables; nothing to backfill`,
+            );
+        }
         backfillToolOwnersInChunks(db, result);
     } finally {
         // DETACH is safe even if ATTACH partially failed; SQLite

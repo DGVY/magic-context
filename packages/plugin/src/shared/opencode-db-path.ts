@@ -247,6 +247,22 @@ export function detectOpenCodeStoreGeneration(
     return "unknown";
 }
 
+/**
+ * Whether a schema still carries the v1 message tables. A 1.18 → 2.x in-place
+ * upgrade keeps them beside the new v2 ones, so this is true for pure v1 stores
+ * AND for migrated v2 stores — exactly the stores whose legacy rows remain
+ * readable (and backfillable). Readers that only need the v1 tables (e.g. the
+ * tool-owner backfill) should accept any store where this returns true instead
+ * of asserting a single generation.
+ */
+export function hasV1MessageTables(
+    db: OpenCodeStoreSchemaDatabase,
+    schema: "main" | "oc_backfill" = "main",
+): boolean {
+    const tables = schemaTableNames(db, schema);
+    return tables.has("message") && tables.has("part");
+}
+
 /** Refuse before a generation-specific query can read the other host's schema. */
 export function assertOpenCodeStoreGeneration(
     db: OpenCodeStoreSchemaDatabase,
