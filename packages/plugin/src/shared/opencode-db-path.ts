@@ -214,7 +214,7 @@ function schemaTableNames(
 ): Set<string> {
     const rows = db
         .prepare(
-            `SELECT name FROM ${schema}.sqlite_master WHERE type = 'table' AND name IN ('message', 'part', 'session', 'project', 'session_message')`,
+            `SELECT name FROM ${schema}.sqlite_master WHERE type = 'table' AND name IN ('message', 'part', 'session', 'project', 'session_message', 'session_v2')`,
         )
         .all() as Array<{ name?: unknown }>;
     return new Set(rows.flatMap((row) => (typeof row.name === "string" ? [row.name] : [])));
@@ -224,15 +224,22 @@ function schemaTableNames(
  * Detect the persisted host schema.
  *
  * `session_message` does NOT identify v2: OpenCode 1.18.x ships that table beside `message`
- * and `part` (verified against a live 1.18.30 store, pinned in this module's tests). Only the
- * ABSENCE of the v1 message tables identifies a v2 store, so a v1 host is never mistaken for
- * a v2 one. A store carrying neither is a host that has not written its schema yet.
+ * and `part` (verified against a live 1.18.30 store, pinned in this module's tests). A v1
+ * host is never mistaken for a v2 one. A store carrying neither is a host that has not
+ * written its schema yet.
+ *
+ * `session_v2` DOES identify v2 unambiguously: OpenCode 1.18.x never creates it, while every
+ * 2.x store does. A 1.18 → 2.x in-place upgrade keeps the retired `message`/`part` tables
+ * beside the new `session_v2` ones, so v2 must win over the v1-message heuristic — otherwise
+ * the official migration path is misclassified as a v1 store and every generation-specific
+ * reader refuses the database.
  */
 export function detectOpenCodeStoreGeneration(
     db: OpenCodeStoreSchemaDatabase,
     schema: "main" | "oc_backfill" = "main",
 ): OpenCodeStoreGeneration {
     const tables = schemaTableNames(db, schema);
+    if (tables.has("session_v2")) return "v2";
     const hasV1Messages = tables.has("message") && tables.has("part");
     if (hasV1Messages) return "v1";
     if (tables.has("session_message")) return "v2";

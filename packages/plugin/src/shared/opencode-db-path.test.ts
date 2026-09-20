@@ -253,6 +253,30 @@ describe("resolveOpenCodeDbPath", () => {
         }
     });
 
+    it("reads a 1.18 -> 2.x migrated store as v2 even though retired v1 tables remain", () => {
+        const { openCodeDir } = useDataHome();
+        const migratedPath = join(openCodeDir, "migrated.db");
+        const migrated = new Database(migratedPath);
+        try {
+            // OpenCode's official 1.18 -> 2.x in-place upgrade keeps the retired v1 tables
+            // (message/part/session) beside the new session_v2/session_message ones. A
+            // detector keyed on v1-table presence misclassifies every migrated store as a
+            // v1 host, and the v2 fail-closed assert then refuses the database on every
+            // generation-specific read (observed: all prompts interrupt within ~20 ms of
+            // submission while the plugin's session hook fails).
+            for (const table of ["message", "part", "session", "project", "session_v2", "session_message"]) {
+                migrated.exec(`CREATE TABLE ${table}(id TEXT)`);
+            }
+            expect(detectOpenCodeStoreGeneration(migrated)).toBe("v2");
+            expect(() => assertOpenCodeStoreGeneration(migrated, "v2", migratedPath)).not.toThrow();
+            expect(() => assertOpenCodeStoreGeneration(migrated, "v1", migratedPath)).toThrow(
+                "expected v1, found v2",
+            );
+        } finally {
+            migrated.close();
+        }
+    });
+
     it("treats a store with no schema yet as empty rather than as a conflicting host", () => {
         const { openCodeDir } = useDataHome();
         const freshPath = join(openCodeDir, "fresh.db");
